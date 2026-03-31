@@ -1,0 +1,59 @@
+name: Update market snapshot (post-market daily)
+
+on:
+  schedule:
+    # Weekdays 22:20 UTC (約美股盤後；夏令時間約 15:20 PT / 冬令時間約 14:20 PT)
+    - cron: '20 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate snapshot from local API
+        shell: bash
+        run: |
+          set -euo pipefail
+          node market-server.js > /tmp/market-server.log 2>&1 &
+          SERVER_PID=$!
+
+          # wait for server up
+          for i in {1..20}; do
+            if curl -sf http://127.0.0.1:8899/api/data >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl -sf http://127.0.0.1:8899/api/data > market-data-snapshot.json
+
+          kill "$SERVER_PID" || true
+
+          # validate json
+          node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('market-data-snapshot.json','utf8')); console.log('snapshot ok')"
+
+      - name: Commit and push if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet market-data-snapshot.json; then
+            echo "No snapshot changes"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add market-data-snapshot.json
+          git commit -m "chore: update market snapshot"
+          git push
