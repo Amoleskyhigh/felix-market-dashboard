@@ -138,17 +138,34 @@
     async function init() {
         const bar = document.getElementById('status-bar');
         try {
-            const res = await fetch('/api/data?t=' + Date.now());
-            if (!res.ok) throw new Error("API 連線失敗");
-            gData = await res.json();
-            bar.className = "success";
-            bar.innerText = "✅ 數據同步完成 (" + new Date().toLocaleTimeString() + ")";
+            let dataSource = 'live API';
+            let res;
+            try {
+                // 本機伺服器模式（node market-server.js）
+                res = await fetch('/api/data?t=' + Date.now());
+                if (!res.ok) throw new Error('live api failed');
+                gData = await res.json();
+            } catch (_) {
+                // GitHub Pages / 外網模式：改讀靜態快照
+                dataSource = 'snapshot';
+                res = await fetch('./market-data-snapshot.json?t=' + Date.now());
+                if (!res.ok) throw new Error('無法載入 market-data-snapshot.json');
+                gData = await res.json();
+            }
+
+            bar.className = 'success';
+            const ts = gData.timestamp || gData.updatedAt || null;
+            const tsText = ts ? new Date(ts).toLocaleString() : new Date().toLocaleTimeString();
+            bar.innerText = dataSource === 'live API'
+                ? `✅ 數據同步完成（即時） ${tsText}`
+                : `✅ 數據已載入（快照） ${tsText}`;
+
             renderKPIs();
             renderCharts();
             updateAlloc();
         } catch (e) {
-            bar.className = "error";
-            bar.innerText = "❌ 系統錯誤: " + e.message;
+            bar.className = 'error';
+            bar.innerText = '❌ 系統錯誤: ' + e.message;
         }
     }
     function renderKPIs() {
