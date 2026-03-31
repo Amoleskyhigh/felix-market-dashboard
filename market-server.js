@@ -58,16 +58,27 @@ async function fetchShillerPE() {
     }
 }
 
-// Fetch CNN Fear & Greed via scraping
+// Fetch Fear & Greed from a stable public source
 async function fetchFearGreed() {
     try {
-        const html = await fetchURL('https://edition.cnn.com/markets/fear-and-greed');
-        // Try to extract the score from page
-        const scoreMatch = html.match(/fear-and-greed-index"[^>]*>[\s\S]*?(\d+)/);
-        if (scoreMatch) return { score: parseInt(scoreMatch[1]), source: 'cnn' };
-    } catch (e) {}
-    // Fallback: calculate from VIX (inverse relationship)
-    // VIX 10-12 = Extreme Greed (90-100), VIX 30+ = Extreme Fear (0-10)
+        const html = await fetchURL('https://feargreedmeter.com/');
+
+        // Examples on page:
+        // "Fear and Greed Index is currently at 15 (Extreme Fear)..."
+        // "Fear and Greed Index: 15 (Extreme Fear) | ..."
+        const m = html.match(/Fear\s+and\s+Greed\s+Index(?:\s+is\s+currently\s+at|:)\s*(\d{1,3})\s*\(([^)]+)\)/i)
+               || html.match(/"value"\s*:\s*(\d{1,3})\s*,\s*"unitText"\s*:\s*"([^"]+)"/i);
+
+        if (m) {
+            const score = Math.max(0, Math.min(100, parseInt(m[1], 10)));
+            const rating = (m[2] || '').trim();
+            return { score, rating, source: 'feargreedmeter' };
+        }
+    } catch (e) {
+        console.error('Fear & Greed fetch error:', e.message);
+    }
+
+    // Source unavailable
     return null;
 }
 
@@ -90,17 +101,7 @@ async function getAllData() {
         fetchFearGreed()
     ]);
 
-    // Calculate Fear & Greed from VIX if CNN unavailable
-    let fg = fearGreed;
-    if (!fg && vix) {
-        // VIX to Fear/Greed: VIX 10→95(Extreme Greed), VIX 20→50(Neutral), VIX 35→5(Extreme Fear)
-        const vixVal = vix.currentPrice;
-        const score = Math.max(0, Math.min(100, Math.round(100 - (vixVal - 10) * (100 / 25))));
-        const rating = score >= 75 ? 'Extreme Greed' : score >= 55 ? 'Greed' : score >= 45 ? 'Neutral' : score >= 25 ? 'Fear' : 'Extreme Fear';
-        fg = { score, rating, source: 'vix-derived' };
-    }
-
-    return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed: fg, timestamp: Date.now() };
+    return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, timestamp: Date.now() };
 }
 
 async function getRetirementData() {
