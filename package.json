@@ -1,0 +1,10 @@
+{
+  "name": "felix-market-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local market dashboard + API",
+  "main": "market-server.js",
+  "scripts": {
+    "start": "node market-server.js"
+  }
+}

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股市研究儀表板 - 專業加強版</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0f1923; color: #e0e0e0; padding: 20px; }
+        .dashboard { max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; color: #4fc3f7; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+        #status-bar { padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; background: #2a3a4a; font-weight: bold; font-size: 14px; }
+        .success { background: #1e3a2c; color: #4caf50; }
+        .error { background: #442727; color: #ff5252; }
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .kpi-card { background: #1a2332; border: 1px solid #2a3a4a; border-radius: 12px; padding: 15px; text-align: center; }
+        .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .kpi-value { font-size: 24px; font-weight: bold; color: #fff; }
+        .kpi-status { font-size: 11px; margin-top: 5px; font-weight: 600; }
+        .main-content { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+        @media (max-width: 1100px) { .main-content { grid-template-columns: 1fr; } }
+        .card { background: #1a2332; border: 1px solid #2a3a4a; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card h3 { color: #4fc3f7; margin-bottom: 15px; font-size: 18px; }
+        .calc-container { background: #1a2332; border: 2px solid #4fc3f7; }
+        .fund-input-group { background: #0f1923; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .fund-input-group input { background: transparent; border: none; border-bottom: 2px solid #4fc3f7; color: #4fc3f7; font-size: 28px; font-weight: bold; width: 150px; text-align: center; outline: none; }
+        .alloc-bar { display: flex; height: 35px; border-radius: 6px; overflow: hidden; margin: 15px 0; border: 1px solid #000; }
+        .alloc-item { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #000; transition: width 0.5s; }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .chart-container { position: relative; height: 220px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th { text-align: left; color: #4fc3f7; padding: 8px; border-bottom: 2px solid #2a3a4a; }
+        td { padding: 8px; border-bottom: 1px solid #2a3a4a; }
+        .up { color: #4caf50; } .down { color: #f44336; } .neutral { color: #ff9800; }
+        .formula-box { background: #0f1923; padding: 12px; border-radius: 8px; font-size: 12px; color: #777; line-height: 1.6; margin-top: 15px; border: 1px dashed #2a3a4a; }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <h1>📊 股市研究儀表板 <small style="font-size:12px;color:#888">專業加強版</small></h1>
+    <p class="subtitle">AI 時代基準 · 指標視覺化警戒 · 綜合配置模型</p>
+    <div id="status-bar">⏳ 正在同步伺服器數據...</div>
+    <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-label">Shiller PE</div><div id="v-pe" class="kpi-value">--</div><div id="s-pe" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">S&P 500</div><div id="v-spx" class="kpi-value">--</div><div id="s-spx" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">NASDAQ</div><div id="v-ixic" class="kpi-value">--</div><div id="s-ixic" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">PHLX SOX</div><div id="v-sox" class="kpi-value">--</div><div id="s-sox" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">QQQ</div><div id="v-qqq" class="kpi-value">--</div><div id="s-qqq" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">SMH</div><div id="v-smh" class="kpi-value">--</div><div id="s-smh" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">BOXX</div><div id="v-boxx" class="kpi-value">--</div><div id="s-boxx" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">VIX</div><div id="v-vix" class="kpi-value">--</div><div id="s-vix" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">DXY</div><div id="v-dxy" class="kpi-value">--</div><div id="s-dxy" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">10Y Yield</div><div id="v-tnx" class="kpi-value">--</div><div id="s-tnx" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">Fear/Greed</div><div id="v-fg" class="kpi-value">--</div><div id="s-fg" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">USD/TWD</div><div id="v-twd" class="kpi-value">--</div><div id="s-twd" class="kpi-status">--</div></div>
+    </div>
+    <div class="main-content">
+        <div class="left-column">
+            <div class="card calc-container">
+                <h3>💰 新資金配置決策模型</h3>
+                <div class="fund-input-group">
+                    新資金預算：<input type="number" id="fund-input" value="10000" oninput="updateAlloc()"> USD
+                </div>
+                <div id="alloc-result-area"></div>
+                <div class="formula-box" id="formula-display">
+                    <b>綜合評分公式：</b><br>
+                    Score = (PE_Score × 0.4) + (VIX_Score × 0.4) + (Yield_Score × 0.2)<br>
+                    • <b>PE 分數</b>: μ=35.55 為 50分，Z 每偏離 1σ 變動 25分。<br>
+                    • <b>VIX 分數</b>: > 25 (恐慌) 85分，< 15 (過熱) 30分。<br>
+                    • <b>10Y 分數</b>: > 4.5% (壓力) 20分，< 3.5% (利多) 80分。
+                </div>
+            </div>
+            <div class="chart-grid">
+                <div class="card"><h3>📈 QQQ 走勢</h3><div class="chart-container"><canvas id="chart-qqq"></canvas></div></div>
+                <div class="card"><h3>📉 Shiller PE (均值/σ 視覺化)</h3><div class="chart-container"><canvas id="chart-pe"></canvas></div></div>
+                <div class="card"><h3>💎 SMH 半導體走勢</h3><div class="chart-container"><canvas id="chart-smh"></canvas></div></div>
+                <div class="card"><h3>😱 VIX 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-vix"></canvas></div></div>
+                <div class="card"><h3>💵 DXY 美元走勢</h3><div class="chart-container"><canvas id="chart-dxy"></canvas></div></div>
+                <div class="card"><h3>🏦 10Y Yield 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-tnx"></canvas></div></div>
+            </div>
+        </div>
+        <div class="right-column">
+            <div class="card">
+                <h3>🚥 系統燈號與閾值定義</h3>
+                <div style="font-size:12px; line-height:1.8;">
+                    <b style="color:#4fc3f7">Shiller PE (AI 時代):</b><br>
+                    ✅ 合理: < 39.8 (+1σ)<br>
+                    ⚠️ 警戒: 39.8 ~ 44.1 (+2σ)<br>
+                    🚨 泡沫: > 44.1<br>
+                    <br>
+                    <b style="color:#4fc3f7">VIX 恐慌指數:</b><br>
+                    🟢 買點: > 25 (市場恐慌)<br>
+                    🟡 正常: 15 - 25<br>
+                    🔴 過熱: < 15 (極度樂觀)<br>
+                    <br>
+                    <b style="color:#4fc3f7">10Y Yield (債息):</b><br>
+                    🟢 利多: < 3.5%<br>
+                    🟡 中性: 3.5% - 4.5%<br>
+                    🔴 壓力: > 4.5%<br>
+                    <br>
+                    <b style="color:#4fc3f7">Fear & Greed (恐懼貪婪):</b><br>
+                    🟢 恐慌機會: < 30<br>
+                    🟡 正常運作: 30 - 70<br>
+                    🔴 貪婪警戒: > 70
+                </div>
+            </div>
+            <div class="card">
+                <h3>📜 科技革命估值參考</h3>
+                <table>
+                    <thead><tr><th>時代</th><th>均值</th><th>標差</th></tr></thead>
+                    <tbody>
+                        <tr><td>工業時代</td><td>14.68</td><td>4.48</td></tr>
+                        <tr><td>網路時代</td><td>30.18</td><td>6.53</td></tr>
+                        <tr><td>行動雲端</td><td>24.84</td><td>4.98</td></tr>
+                        <tr style="background:rgba(79,195,247,0.1)"><td>AI 革命</td><td>35.55</td><td>4.27</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    if (!Math.erf) { 
+        Math.erf = function(x) { 
+            const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911; 
+            const sign = x < 0 ? -1 : 1; 
+            x = Math.abs(x); 
+            const t = 1.0/(1.0 + p*x); 
+            const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x * x); 
+            return sign*y; 
+        }; 
+    }
+    const AI_MEAN = 35.55, AI_SD = 4.27;
+    let gData = null;
+    async function init() {
+        const bar = document.getElementById('status-bar');
+        try {
+            const res = await fetch('/api/data?t=' + Date.now());
+            if (!res.ok) throw new Error("API 連線失敗");
+            gData = await res.json();
+            bar.className = "success";
+            bar.innerText = "✅ 數據同步完成 (" + new Date().toLocaleTimeString() + ")";
+            renderKPIs();
+            renderCharts();
+            updateAlloc();
+        } catch (e) {
+            bar.className = "error";
+            bar.innerText = "❌ 系統錯誤: " + e.message;
+        }
+    }
+    function renderKPIs() {
+        const d = gData;
+        if (d.shiller) {
+            const z = (d.shiller.current - AI_MEAN) / AI_SD;
+            document.getElementById('v-pe').innerText = d.shiller.current.toFixed(2);
+            document.getElementById('s-pe').innerText = "Z: " + z.toFixed(2) + "σ";
+            document.getElementById('s-pe').className = 'kpi-status ' + (z > 1.5 ? 'down' : z > 0.8 ? 'neutral' : 'up');
+        }
+        if (d.spx) document.getElementById('v-spx').innerText = d.spx.currentPrice.toFixed(0);
+        if (d.ixic) document.getElementById('v-ixic').innerText = d.ixic.currentPrice.toFixed(0);
+        if (d.sox) document.getElementById('v-sox').innerText = d.sox.currentPrice.toFixed(0);
+        if (d.qqq) document.getElementById('v-qqq').innerText = '$' + d.qqq.currentPrice.toFixed(1);
+        if (d.smh) document.getElementById('v-smh').innerText = '$' + d.smh.currentPrice.toFixed(1);
+        if (d.boxx) document.getElementById('v-boxx').innerText = '$' + d.boxx.currentPrice.toFixed(1);
+        if (d.vix) {
+            const v = d.vix.currentPrice;
+            document.getElementById('v-vix').innerText = v.toFixed(1);
+            document.getElementById('s-vix').innerText = v > 25 ? '🟢 買點' : v < 15 ? '🔴 過熱' : '🟡 中性';
+            document.getElementById('s-vix').className = 'kpi-status ' + (v > 25 ? 'up' : v < 15 ? 'down' : 'neutral');
+        }
+        if (d.dxy) document.getElementById('v-dxy').innerText = d.dxy.currentPrice.toFixed(1);
+        if (d.tnx) {
+            const y = d.tnx.currentPrice;
+            document.getElementById('v-tnx').innerText = y.toFixed(2) + '%';
+            document.getElementById('s-tnx').innerText = y > 4.5 ? '🔴 壓力' : y < 3.5 ? '🟢 利多' : '🟡 中性';
+            document.getElementById('s-tnx').className = 'kpi-status ' + (y > 4.5 ? 'down' : y < 3.5 ? 'up' : 'neutral');
+        }
+        if (d.fearGreed) {
+            const fg = d.fearGreed.score;
+            document.getElementById('v-fg').innerText = fg;
+            document.getElementById('s-fg').innerText = fg > 70 ? '🔴 貪婪' : fg < 30 ? '🟢 恐慌' : '🟡 中性';
+            document.getElementById('s-fg').className = 'kpi-status ' + (fg > 70 ? 'down' : fg < 30 ? 'up' : 'neutral');
+        }
+        if (d.twd) document.getElementById('v-twd').innerText = d.twd.currentPrice.toFixed(2);
+    }
+    function renderCharts() {
+        const d = gData;
+        if (d.qqq) draw('chart-qqq', d.qqq, '#4fc3f7', 'QQQ', []);
+        if (d.shiller) {
+            const peData = { timestamps: d.shiller.history.map(h => new Date(h.date).getTime()), closes: d.shiller.history.map(h => h.value) };
+            draw('chart-pe', peData, '#ff9800', 'Shiller PE', [AI_MEAN, AI_MEAN + AI_SD, AI_MEAN + 2*AI_SD]);
+        }
+        if (d.smh) draw('chart-smh', d.smh, '#ce93d8', 'SMH', []);
+        if (d.vix) draw('chart-vix', d.vix, '#f44336', 'VIX', [25, 15]);
+        if (d.dxy) draw('chart-dxy', d.dxy, '#81c784', 'DXY', []);
+        if (d.tnx) draw('chart-tnx', d.tnx, '#ffd54f', 'Yield', [4.5, 3.5]);
+    }
+    function draw(id, data, color, label, lines) {
+        if (!data || !data.timestamps) return;
+        const datasets = [{ label: label, data: data.closes, borderColor: color, borderWidth: 1.5, pointRadius: 0, fill: false }];
+        lines.forEach((val, idx) => {
+            datasets.push({ label: 'Ref', data: data.closes.map(() => val), borderColor: '#444', borderDash: [5,5], pointRadius: 0, fill: false, borderWidth: 1 });
+        });
+        new Chart(document.getElementById(id), {
+            type: 'line', data: { labels: data.timestamps.map(t => new Date(t)), datasets: datasets },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { type: 'time', ticks: { maxTicksLimit: 5 } } } }
+        });
+    }
+    function updateAlloc() {
+        if (!gData || !gData.shiller) return;
+        const fund = parseFloat(document.getElementById('fund-input').value) || 0;
+        const peZ = (gData.shiller.current - AI_MEAN) / AI_SD;
+        const peScore = Math.max(0, Math.min(100, 50 - (peZ * 25)));
+        const vixScore = gData.vix.currentPrice > 25 ? 85 : gData.vix.currentPrice < 15 ? 30 : 55;
+        const tnxScore = gData.tnx.currentPrice > 4.5 ? 20 : gData.tnx.currentPrice < 3.5 ? 80 : 50;
+        const totalScore = Math.round((peScore * 0.4) + (vixScore * 0.4) + (tnxScore * 0.2));
+        let qld=0, qqq=0, cash=0;
+        if(totalScore >= 80) { qld=30; qqq=55; cash=15; }
+        else if(totalScore >= 60) { qld=20; qqq=55; cash=25; }
+        else if(totalScore >= 40) { qld=10; qqq=50; cash=40; }
+        else if(totalScore >= 20) { qld=5; qqq=35; cash=60; }
+        else { qld=0; qqq=20; cash=80; }
+        document.getElementById('alloc-result-area').innerHTML = '<div style="text-align:center; margin-bottom:15px;">綜合投資評分：<b style="color:#4fc3f7; font-size:28px;">' + totalScore + '</b></div>' + 
+            '<div class="alloc-bar">' + 
+            '<div class="alloc-item" style="width:'+qld+'%; background:#f44336">QLD '+qld+'%</div>' + 
+            '<div class="alloc-item" style="width:'+qqq+'%; background:#4fc3f7">QQQ '+qqq+'%</div>' + 
+            '<div class="alloc-item" style="width:'+cash+'%; background:#4caf50">現金 '+cash+'%</div>' + 
+            '</div>' + 
+            '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; text-align:center; font-size:14px;">' + 
+            '<div>QLD: <b>$' + (fund*qld/100).toLocaleString() + '</b></div>' + 
+            '<div>QQQ: <b>$' + (fund*qqq/100).toLocaleString() + '</b></div>' + 
+            '<div>現金: <b>$' + (fund*cash/100).toLocaleString() + '</b></div>' + 
+            '</div>';
+    }
+    init();
+</script>
+</body>
+</html>
