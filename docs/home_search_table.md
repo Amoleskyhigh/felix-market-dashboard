@@ -9,6 +9,7 @@
 | 1001 Fuller Ter | Sunnyvale, CA 94086 | **$4,950/mo** | **3bd / 3.5ba / 1,697 sqft** | [Redfin](https://www.redfin.com/CA/Sunnyvale/1001-Fuller-Ter-94086/home/1177280) | Tri-level townhome；2-car attached garage；gas stove；大島台；採光佳；Available **Apr 1**；Pets case-by-case | （尚未看房） | 寵物規則（case-by-case=需申請）；是否有 HOA 限制；噪音/隔音；樓層爬樓梯負擔 |
 | 3375 Gonzaga Pl | Santa Clara, CA 95051 | （待抓） | （待抓） | [Zillow](https://www.zillow.com/homedetails/3375-Gonzaga-Pl-Santa-Clara-CA-95051/19554674_zpid/) | Zillow 頁面目前無法自動抓取（403） | （尚未看房） | 確認月租/坪數/寵物政策；車位；屋況（是否需整修） |
 | 1921 Nobili Ave | Santa Clara, CA 95051 | （待抓） | （待抓） | [Zillow](https://www.zillow.com/homedetails/1921-Nobili-Ave-Santa-Clara-CA-95051/19554182_zpid/) | Zillow 頁面目前無法自動抓取（403） | （尚未看房） | 確認月租/坪數/寵物政策；車位；屋況（是否需整修） |
+| 355 N Wolfe Rd（Unit SI-FL2-ID636） | Sunnyvale, CA | （待抓） | （待抓） | [Apartments.com](https://www.apartments.com/355-n-wolfe-rd-sunnyvale-ca-unit-si-fl2-id636/crehj3g/) | Apartments.com 可能有反爬/403（若打不開可改用手機複製連結到 Safari） | （尚未看房） | 確認月租/坪數/房型；狗限制；停車/入住日 |
 
 ## 來源連結
 - 4766 Elmhurst Dr（Zillow）：https://www.zillow.com/homedetails/4766-Elmhurst-Dr-San-Jose-CA-95129/19648624_zpid/
