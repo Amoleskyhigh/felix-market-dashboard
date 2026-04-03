@@ -37,23 +37,25 @@ jobs:
           done
 
           curl -sf http://127.0.0.1:8899/api/data > market-data-snapshot.json
+          mkdir -p docs
+          cp market-data-snapshot.json docs/market-data-snapshot.json
 
           kill "$SERVER_PID" || true
 
           # validate json
-          node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('market-data-snapshot.json','utf8')); console.log('snapshot ok')"
+          node -e "const fs=require('fs'); JSON.parse(fs.readFileSync('market-data-snapshot.json','utf8')); JSON.parse(fs.readFileSync('docs/market-data-snapshot.json','utf8')); console.log('snapshot ok')"
 
       - name: Commit and push if changed
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet market-data-snapshot.json; then
+          if git diff --quiet market-data-snapshot.json docs/market-data-snapshot.json; then
             echo "No snapshot changes"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add market-data-snapshot.json
+          git add market-data-snapshot.json docs/market-data-snapshot.json
           git commit -m "chore: update market snapshot"
           git push
