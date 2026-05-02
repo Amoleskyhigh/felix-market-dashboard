@@ -58,6 +58,23 @@ async function fetchShillerPE() {
     }
 }
 
+async function fetchCreditSpread() {
+    try {
+        const csv = await fetchURL('https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2');
+        const lines = csv.trim().split('\n').slice(1).reverse();
+        for (const line of lines) {
+            const parts = line.split(',');
+            const v = parseFloat(parts[1]);
+            if (!isNaN(v)) return { value: v, symbol: 'BAMLH0A0HYM2' };
+        }
+    } catch (e) { console.error('Credit Spread fetch error:', e.message); }
+    return null;
+}
+
+async function fetchCopper() {
+    return fetchYahooChart('HG=F');
+}
+
 // Fetch Fear & Greed from a stable public source
 async function fetchFearGreed() {
     try {
@@ -107,7 +124,7 @@ async function fetchMarketBreadth() {
 }
 
 async function getAllData() {
-    const [qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, creditSpread, breadth] = await Promise.all([
+    const [qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, creditSpread, copper] = await Promise.all([
         fetchYahooChart('QQQ'),
         fetchYahooChart('SMH'),
         fetchYahooChart('BOXX'),
@@ -124,10 +141,10 @@ async function getAllData() {
         fetchShillerPE(),
         fetchFearGreed(),
         fetchCreditSpread(),
-        fetchMarketBreadth()
+        fetchCopper()
     ]);
 
-    return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, creditSpread, breadth, timestamp: Date.now() };
+    return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, creditSpread, copper, timestamp: Date.now() };
 }
 
 async function getRetirementData() {

@@ -56,8 +56,8 @@
         <div class="kpi-card"><div class="kpi-label">10Y Yield</div><div id="v-tnx" class="kpi-value">--</div><div id="s-tnx" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">Fear/Greed</div><div id="v-fg" class="kpi-value">--</div><div id="s-fg" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">Credit Spread</div><div id="v-cs" class="kpi-value">--</div><div id="s-cs" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">Breadth (200MA)</div><div id="v-br" class="kpi-value">--</div><div id="s-br" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">USD/TWD</div><div id="v-twd" class="kpi-value">--</div><div id="s-twd" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">Copper (銅)</div><div id="v-hg" class="kpi-value">--</div><div id="s-hg" class="kpi-status">--</div></div>
     </div>
     <div class="main-content">
         <div class="left-column">
@@ -82,6 +82,7 @@
                 <div class="card"><h3>😱 VIX 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-vix"></canvas></div></div>
                 <div class="card"><h3>💵 DXY 美元走勢</h3><div class="chart-container"><canvas id="chart-dxy"></canvas></div></div>
                 <div class="card"><h3>🏦 10Y Yield 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-tnx"></canvas></div></div>
+                <div class="card"><h3>🏗️ Copper 銅價走勢</h3><div class="chart-container"><canvas id="chart-hg"></canvas></div></div>
             </div>
         </div>
         <div class="right-column">
@@ -219,13 +220,12 @@
             document.getElementById('s-cs').innerText = cs > 5.0 ? '🚨 高風險' : '✅ 正常';
             document.getElementById('s-cs').className = 'kpi-status ' + (cs > 5.0 ? 'down' : 'up');
         }
-        if (d.breadth) {
-            const br = d.breadth.value;
-            document.getElementById('v-br').innerText = br.toFixed(1) + '%';
-            document.getElementById('s-br').innerText = br < 30 ? '🟢 超賣' : br > 80 ? '🔴 過熱' : '🟡 正常';
-            document.getElementById('s-br').className = 'kpi-status ' + (br < 30 ? 'up' : br > 80 ? 'down' : 'neutral');
-        }
         if (d.twd) document.getElementById('v-twd').innerText = d.twd.currentPrice.toFixed(2);
+        if (d.copper) {
+            const hg = d.copper.currentPrice;
+            document.getElementById('v-hg').innerText = '$' + hg.toFixed(2);
+            document.getElementById('s-hg').innerText = 'LME 銅價';
+        }
     }
     function renderCharts() {
         const d = gData;
@@ -238,6 +238,7 @@
         if (d.vix) draw('chart-vix', d.vix, '#f44336', 'VIX', [25, 15]);
         if (d.dxy) draw('chart-dxy', d.dxy, '#81c784', 'DXY', []);
         if (d.tnx) draw('chart-tnx', d.tnx, '#ffd54f', 'Yield', [4.5, 3.5]);
+        if (d.copper) draw('chart-hg', d.copper, '#ff7043', 'Copper', []);
     }
     function draw(id, data, color, label, lines) {
         if (!data || !data.timestamps) return;
