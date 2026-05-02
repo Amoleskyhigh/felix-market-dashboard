@@ -62,13 +62,8 @@ async function fetchShillerPE() {
 async function fetchFearGreed() {
     try {
         const html = await fetchURL('https://feargreedmeter.com/');
-
-        // Examples on page:
-        // "Fear and Greed Index is currently at 15 (Extreme Fear)..."
-        // "Fear and Greed Index: 15 (Extreme Fear) | ..."
         const m = html.match(/Fear\s+and\s+Greed\s+Index(?:\s+is\s+currently\s+at|:)\s*(\d{1,3})\s*\(([^)]+)\)/i)
                || html.match(/"value"\s*:\s*(\d{1,3})\s*,\s*"unitText"\s*:\s*"([^"]+)"/i);
-
         if (m) {
             const score = Math.max(0, Math.min(100, parseInt(m[1], 10)));
             const rating = (m[2] || '').trim();
@@ -77,13 +72,34 @@ async function fetchFearGreed() {
     } catch (e) {
         console.error('Fear & Greed fetch error:', e.message);
     }
+    return null;
+}
 
-    // Source unavailable
+async function fetchCreditSpread() {
+    try {
+        const html = await fetchURL('https://fred.stlouisfed.org/series/BAMLH0A0HYM2');
+        const m = html.match(/(\d{4}-\d{2}-\d{2}):\s*([\d.]+)/);
+        if (m) {
+            return { value: parseFloat(m[2]), date: m[1] };
+        }
+    } catch (e) {
+        console.error('Credit Spread fetch error:', e.message);
+    }
+    return null;
+}
+
+async function fetchMarketBreadth() {
+    try {
+        // Attempt to fetch from multpl or similar as $S5TH fallback
+        const html = await fetchURL('https://www.multpl.com/s-p-500-stocks-above-200-day-moving-average');
+        const m = html.match(/([\d.]+)%/);
+        if (m) return { value: parseFloat(m[1]) };
+    } catch (e) {}
     return null;
 }
 
 async function getAllData() {
-    const [qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed] = await Promise.all([
+    const [qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, creditSpread, breadth] = await Promise.all([
         fetchYahooChart('QQQ'),
         fetchYahooChart('SMH'),
         fetchYahooChart('BOXX'),
@@ -98,10 +114,12 @@ async function getAllData() {
         fetchYahooChart('DX-Y.NYB'),
         fetchYahooChart('^TNX'),
         fetchShillerPE(),
-        fetchFearGreed()
+        fetchFearGreed(),
+        fetchCreditSpread(),
+        fetchMarketBreadth()
     ]);
 
-    return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, timestamp: Date.now() };
+    return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, jpy, dxy, tnx, shiller, fearGreed, creditSpread, breadth, timestamp: Date.now() };
 }
 
 async function getRetirementData() {

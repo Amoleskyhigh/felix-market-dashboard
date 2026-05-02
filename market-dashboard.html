@@ -55,6 +55,8 @@
         <div class="kpi-card"><div class="kpi-label">DXY</div><div id="v-dxy" class="kpi-value">--</div><div id="s-dxy" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">10Y Yield</div><div id="v-tnx" class="kpi-value">--</div><div id="s-tnx" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">Fear/Greed</div><div id="v-fg" class="kpi-value">--</div><div id="s-fg" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">Credit Spread</div><div id="v-cs" class="kpi-value">--</div><div id="s-cs" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">Breadth (200MA)</div><div id="v-br" class="kpi-value">--</div><div id="s-br" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">USD/TWD</div><div id="v-twd" class="kpi-value">--</div><div id="s-twd" class="kpi-status">--</div></div>
     </div>
     <div class="main-content">
@@ -104,7 +106,17 @@
                     <b style="color:#4fc3f7">Fear & Greed (恐懼貪婪):</b><br>
                     🟢 恐慌機會: < 30<br>
                     🟡 正常運作: 30 - 70<br>
-                    🔴 貪婪警戒: > 70
+                    🔴 貪婪警戒: > 70<br>
+                    <br>
+                    <b style="color:#4fc3f7">Credit Spread (信用利差):</b><br>
+                    🟢 安全: < 4%<br>
+                    🟡 警戒: 4% - 5%<br>
+                    🔴 危機: > 5% (歷史買點)<br>
+                    <br>
+                    <b style="color:#4fc3f7">Market Breadth (廣度):</b><br>
+                    🟢 機會: < 30% (超賣)<br>
+                    🟡 正常: 30% - 80%<br>
+                    🔴 擁擠: > 80% (過熱)
                 </div>
             </div>
             <div class="card">
@@ -200,6 +212,18 @@
             document.getElementById('v-fg').innerText = fg;
             document.getElementById('s-fg').innerText = fg > 70 ? '🔴 貪婪' : fg < 30 ? '🟢 恐慌' : '🟡 中性';
             document.getElementById('s-fg').className = 'kpi-status ' + (fg > 70 ? 'down' : fg < 30 ? 'up' : 'neutral');
+        }
+        if (d.creditSpread) {
+            const cs = d.creditSpread.value;
+            document.getElementById('v-cs').innerText = cs.toFixed(2) + '%';
+            document.getElementById('s-cs').innerText = cs > 5.0 ? '🚨 高風險' : '✅ 正常';
+            document.getElementById('s-cs').className = 'kpi-status ' + (cs > 5.0 ? 'down' : 'up');
+        }
+        if (d.breadth) {
+            const br = d.breadth.value;
+            document.getElementById('v-br').innerText = br.toFixed(1) + '%';
+            document.getElementById('s-br').innerText = br < 30 ? '🟢 超賣' : br > 80 ? '🔴 過熱' : '🟡 正常';
+            document.getElementById('s-br').className = 'kpi-status ' + (br < 30 ? 'up' : br > 80 ? 'down' : 'neutral');
         }
         if (d.twd) document.getElementById('v-twd').innerText = d.twd.currentPrice.toFixed(2);
     }
