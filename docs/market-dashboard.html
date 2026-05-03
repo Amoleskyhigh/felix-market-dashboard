@@ -300,19 +300,64 @@
     }
 
     let quadrantChart = null;
+    const QKEY = 'quadrant-history-v1';
+    function loadQHistory(){ try { return JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch { return []; } }
+    function saveQHistory(arr){ localStorage.setItem(QKEY, JSON.stringify(arr.slice(-10))); }
+
+    const quadrantBgPlugin = {
+        id: 'quadrantBgPlugin',
+        beforeDraw(chart) {
+            const {ctx, chartArea, scales} = chart;
+            if (!chartArea) return;
+            const xCut = scales.x.getPixelForValue(4);
+            const yCut = scales.y.getPixelForValue(2);
+            const {left,right,top,bottom}=chartArea;
+            ctx.save();
+            // TL: 逆向佈局區
+            ctx.fillStyle='rgba(255, 214, 102, 0.10)'; ctx.fillRect(left, top, xCut-left, yCut-top);
+            // TR: 進攻區
+            ctx.fillStyle='rgba(76, 175, 80, 0.12)'; ctx.fillRect(xCut, top, right-xCut, yCut-top);
+            // BL: 防守區
+            ctx.fillStyle='rgba(244, 67, 54, 0.10)'; ctx.fillRect(left, yCut, xCut-left, bottom-yCut);
+            // BR: 趨勢續抱區
+            ctx.fillStyle='rgba(255, 152, 0, 0.10)'; ctx.fillRect(xCut, yCut, right-xCut, bottom-yCut);
+            ctx.restore();
+        }
+    };
+
+    function quadrantZone(x,y){
+        if (x >= 4 && y >= 2) return {name:'🟢 進攻區', band:'建議股票倉位 55%~70%'};
+        if (x < 4 && y >= 2) return {name:'🟡 逆向佈局區', band:'建議股票倉位 45%~60%'};
+        if (x >= 4 && y < 2) return {name:'🟠 趨勢續抱區', band:'建議股票倉位 50%~65%'};
+        return {name:'🔴 防守區', band:'建議股票倉位 35%~50%'};
+    }
+
     function renderQuadrant(trendScore, emotionScore) {
-        const note = document.getElementById('quadrant-note');
-        const mode = (trendScore >= 4 && emotionScore >= 2) ? '🟢 進攻區' :
-                     (trendScore < 4 && emotionScore >= 2) ? '🟡 逆向佈局區' :
-                     (trendScore >= 4 && emotionScore < 2) ? '🟠 趨勢續抱區' : '🔴 防守區';
-        note.innerText = `今日位置：${mode}（趨勢=${trendScore.toFixed(1)}, 情緒=${emotionScore}）`;
+        const today = new Date().toISOString().slice(0,10);
+        let hist = loadQHistory().filter(x => x && x.date && Number.isFinite(x.x) && Number.isFinite(x.y));
+        if (!hist.length || hist[hist.length-1].date !== today) hist.push({date:today, x:trendScore, y:emotionScore});
+        else hist[hist.length-1] = {date:today, x:trendScore, y:emotionScore};
+        hist = hist.slice(-10);
+        saveQHistory(hist);
+
+        const zone = quadrantZone(trendScore, emotionScore);
+        document.getElementById('quadrant-note').innerText = `今日位置：${zone.name}（趨勢=${trendScore.toFixed(1)}, 情緒=${emotionScore}）｜${zone.band}`;
 
         const ctx = document.getElementById('chart-quadrant');
         if (!ctx) return;
         if (quadrantChart) quadrantChart.destroy();
+
+        const lineData = hist.map(p => ({x:p.x, y:p.y}));
+        const todayPoint = [{x:trendScore, y:emotionScore}];
+
         quadrantChart = new Chart(ctx, {
             type: 'scatter',
-            data: { datasets: [{ label: 'Today', data: [{x: trendScore, y: emotionScore}], pointRadius: 8, pointBackgroundColor: '#4fc3f7' }] },
+            data: {
+                datasets: [
+                    { type:'line', data: lineData, borderColor:'#90caf9', borderWidth:2, pointRadius:3, pointBackgroundColor:'#90caf9', fill:false, tension:0.15 },
+                    { label:'Today', data: todayPoint, pointRadius:8, pointBackgroundColor:'#4fc3f7' }
+                ]
+            },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
@@ -320,7 +365,8 @@
                     x: { min: 0, max: 8, title: { display: true, text: '趨勢軸' }, grid: { color: '#334' } },
                     y: { min: -2, max: 10, title: { display: true, text: '情緒軸' }, grid: { color: '#334' } }
                 }
-            }
+            },
+            plugins:[quadrantBgPlugin]
         });
     }
 
