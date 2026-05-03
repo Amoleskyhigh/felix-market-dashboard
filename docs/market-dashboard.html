@@ -56,6 +56,8 @@
         <div class="kpi-card"><div class="kpi-label">10Y Yield</div><div id="v-tnx" class="kpi-value">--</div><div id="s-tnx" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">Fear/Greed</div><div id="v-fg" class="kpi-value">--</div><div id="s-fg" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">Credit Spread</div><div id="v-cs" class="kpi-value">--</div><div id="s-cs" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">HY OAS (bp)</div><div id="v-oas" class="kpi-value">--</div><div id="s-oas" class="kpi-status">--</div></div>
+        <div class="kpi-card"><div class="kpi-label">市場廣度 (>200MA)</div><div id="v-br" class="kpi-value">--</div><div id="s-br" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">USD/TWD</div><div id="v-twd" class="kpi-value">--</div><div id="s-twd" class="kpi-status">--</div></div>
         <div class="kpi-card"><div class="kpi-label">Copper (銅)</div><div id="v-hg" class="kpi-value">--</div><div id="s-hg" class="kpi-status">--</div></div>
     </div>
@@ -230,6 +232,17 @@
             document.getElementById('v-cs').innerText = cs.toFixed(2) + '%';
             document.getElementById('s-cs').innerText = cs > 5.0 ? '🚨 高風險' : '✅ 正常';
             document.getElementById('s-cs').className = 'kpi-status ' + (cs > 5.0 ? 'down' : 'up');
+
+            const oas = cs * 100;
+            document.getElementById('v-oas').innerText = Math.round(oas) + ' bp';
+            document.getElementById('s-oas').innerText = oas > 600 ? '🚨 極端恐慌' : oas > 500 ? '🔴 高壓' : oas > 400 ? '🟡 警戒' : oas > 300 ? '🟢 中性' : '✅ 低風險';
+            document.getElementById('s-oas').className = 'kpi-status ' + (oas > 500 ? 'down' : oas > 400 ? 'neutral' : 'up');
+        }
+        if (d.breadth) {
+            const br = d.breadth.value;
+            document.getElementById('v-br').innerText = br.toFixed(1) + '%';
+            document.getElementById('s-br').innerText = br > 80 ? '🔴 過熱' : br > 50 ? '🟡 中性' : '🟢 偏弱可觀察';
+            document.getElementById('s-br').className = 'kpi-status ' + (br > 80 ? 'down' : br > 50 ? 'neutral' : 'up');
         }
         if (d.twd) document.getElementById('v-twd').innerText = d.twd.currentPrice.toFixed(2);
         if (d.copper) {
