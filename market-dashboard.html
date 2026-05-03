@@ -68,11 +68,11 @@
                 </div>
                 <div id="alloc-result-area"></div>
                 <div class="formula-box" id="formula-display">
-                    <b>綜合評分公式：</b><br>
-                    Score = (PE_Score × 0.4) + (VIX_Score × 0.4) + (Yield_Score × 0.2)<br>
-                    • <b>PE 分數</b>: μ=35.55 為 50分，Z 每偏離 1σ 變動 25分。<br>
-                    • <b>VIX 分數</b>: > 25 (恐慌) 85分，< 15 (過熱) 30分。<br>
-                    • <b>10Y 分數</b>: > 4.5% (壓力) 20分，< 3.5% (利多) 80分。
+                    <b>雙軸配置模型（v2）</b><br>
+                    趨勢軸（Copper / 10Y / DXY / Breadth）× K + 情緒軸（VIX / F&G / HY OAS）<br>
+                    • K 係數：MA200以上=1.0，下0~5%=0.8，下5~15%=0.6，下15%+=0.5。<br>
+                    • Shiller PE 護欄：PE 36~39.33 股票上限 65%；PE >39.33 上限 55%。<br>
+                    • 上線股票上限固定：<b>70%</b>。
                 </div>
             </div>
             <div class="chart-grid">
@@ -121,6 +121,10 @@
                 </div>
             </div>
             <div class="card">
+                <h3>📅 本月 MTD 表現</h3>
+                <div id="mtd-box" style="font-size:13px;line-height:1.8">--</div>
+            </div>
+            <div class="card">
                 <h3>📜 科技革命估值參考</h3>
                 <table>
                     <thead><tr><th>時代</th><th>均值</th><th>標差</th></tr></thead>
@@ -148,34 +152,36 @@
     }
     const AI_MEAN = 35.55, AI_SD = 4.27;
     let gData = null;
+    const isValidPayload = (d) => !!(d && d.qqq?.currentPrice && d.smh?.currentPrice && d.vix?.currentPrice && d.shiller?.current);
+
     async function init() {
         const bar = document.getElementById('status-bar');
         try {
             let dataSource = 'live API';
             let res;
             try {
-                // 本機伺服器模式（node market-server.js）
                 res = await fetch('/api/data?t=' + Date.now());
                 if (!res.ok) throw new Error('live api failed');
-                gData = await res.json();
+                const liveData = await res.json();
+                if (!isValidPayload(liveData)) throw new Error('live payload invalid');
+                gData = liveData;
             } catch (_) {
-                // GitHub Pages / 外網模式：改讀靜態快照
                 dataSource = 'snapshot';
                 res = await fetch('./market-data-snapshot.json?t=' + Date.now());
                 if (!res.ok) throw new Error('無法載入 market-data-snapshot.json');
-                gData = await res.json();
+                const snap = await res.json();
+                if (!isValidPayload(snap)) throw new Error('snapshot payload invalid');
+                gData = snap;
             }
 
             bar.className = 'success';
             const ts = gData.timestamp || gData.updatedAt || null;
             const tsText = ts ? new Date(ts).toLocaleString() : new Date().toLocaleTimeString();
-            bar.innerText = dataSource === 'live API'
-                ? `✅ 數據同步完成（即時） ${tsText}`
-                : `✅ 數據已載入（快照） ${tsText}`;
-
+            bar.innerText = `✅ 數據已載入（${dataSource}） ${tsText}`;
             renderKPIs();
             renderCharts();
             updateAlloc();
+            renderMTD();
         } catch (e) {
             bar.className = 'error';
             bar.innerText = '❌ 系統錯誤: ' + e.message;
@@ -251,30 +257,79 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { type: 'time', ticks: { maxTicksLimit: 5 } } } }
         });
     }
+    function mtdOf(asset) {
+        if (!asset?.timestamps?.length || !asset?.closes?.length) return null;
+        const n = asset.timestamps.length;
+        const latest = asset.closes[n - 1];
+        const latestDate = new Date(asset.timestamps[n - 1]);
+        let first = null;
+        for (let i = 0; i < n; i++) {
+            const d = new Date(asset.timestamps[i]);
+            if (d.getMonth() === latestDate.getMonth() && d.getFullYear() === latestDate.getFullYear()) { first = asset.closes[i]; break; }
+        }
+        if (!first || !latest) return null;
+        return ((latest - first) / first) * 100;
+    }
+
+    function renderMTD() {
+        const items = ['qqq','smh','spy','boxx','qld'];
+        const html = items.map(k => {
+            const v = mtdOf(gData[k]);
+            const txt = v == null ? '--' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+            return `<div>${k.toUpperCase()}: <b>${txt}</b></div>`;
+        }).join('');
+        document.getElementById('mtd-box').innerHTML = html;
+    }
+
     function updateAlloc() {
-        if (!gData || !gData.shiller) return;
+        if (!gData || !gData.shiller || !gData.vix || !gData.tnx) return;
         const fund = parseFloat(document.getElementById('fund-input').value) || 0;
-        const peZ = (gData.shiller.current - AI_MEAN) / AI_SD;
-        const peScore = Math.max(0, Math.min(100, 50 - (peZ * 25)));
-        const vixScore = gData.vix.currentPrice > 25 ? 85 : gData.vix.currentPrice < 15 ? 30 : 55;
-        const tnxScore = gData.tnx.currentPrice > 4.5 ? 20 : gData.tnx.currentPrice < 3.5 ? 80 : 50;
-        const totalScore = Math.round((peScore * 0.4) + (vixScore * 0.4) + (tnxScore * 0.2));
-        let qld=0, qqq=0, cash=0;
-        if(totalScore >= 80) { qld=30; qqq=55; cash=15; }
-        else if(totalScore >= 60) { qld=20; qqq=55; cash=25; }
-        else if(totalScore >= 40) { qld=10; qqq=50; cash=40; }
-        else if(totalScore >= 20) { qld=5; qqq=35; cash=60; }
-        else { qld=0; qqq=20; cash=80; }
-        document.getElementById('alloc-result-area').innerHTML = '<div style="text-align:center; margin-bottom:15px;">綜合投資評分：<b style="color:#4fc3f7; font-size:28px;">' + totalScore + '</b></div>' + 
-            '<div class="alloc-bar">' + 
-            '<div class="alloc-item" style="width:'+qld+'%; background:#f44336">QLD '+qld+'%</div>' + 
-            '<div class="alloc-item" style="width:'+qqq+'%; background:#4fc3f7">QQQ '+qqq+'%</div>' + 
-            '<div class="alloc-item" style="width:'+cash+'%; background:#4caf50">現金 '+cash+'%</div>' + 
-            '</div>' + 
-            '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; text-align:center; font-size:14px;">' + 
-            '<div>QLD: <b>$' + (fund*qld/100).toLocaleString() + '</b></div>' + 
-            '<div>QQQ: <b>$' + (fund*qqq/100).toLocaleString() + '</b></div>' + 
-            '<div>現金: <b>$' + (fund*cash/100).toLocaleString() + '</b></div>' + 
+        const spx = gData.spx || gData.spy;
+
+        const trend = {
+            copper: (gData.copper?.currentPrice && gData.copper?.closes?.length >= 4) ? (gData.copper.currentPrice > (gData.copper.closes.slice(-4, -1).reduce((a,b)=>a+b,0)/3) ? 2 : 0) : 0,
+            tnx: (gData.tnx?.currentPrice && gData.tnx?.closes?.length >= 20) ? (gData.tnx.currentPrice < (gData.tnx.closes.slice(-20).reduce((a,b)=>a+b,0)/20) ? 2 : 0) : 0,
+            dxy: (gData.dxy?.currentPrice && gData.dxy?.closes?.length >= 20) ? (gData.dxy.currentPrice < (gData.dxy.closes.slice(-20).reduce((a,b)=>a+b,0)/20) ? 2 : 0) : 0,
+            breadth: gData.breadth?.value > 70 ? 2 : gData.breadth?.value > 50 ? 1 : 0
+        };
+        let K = 1.0;
+        if (spx?.currentPrice && spx?.closes?.length >= 200) {
+            const ma200 = spx.closes.slice(-200).reduce((a,b)=>a+b,0)/200;
+            const dd = (spx.currentPrice - ma200) / ma200;
+            if (dd < -0.15) K = 0.5; else if (dd < -0.05) K = 0.6; else if (dd < 0) K = 0.8;
+        }
+        const trendScore = (trend.copper + trend.tnx + trend.dxy + trend.breadth) * K;
+
+        const vix = gData.vix.currentPrice;
+        const fg = gData.fearGreed?.score ?? 50;
+        const oas = (gData.creditSpread?.value || 3) * 100;
+        const emoVix = vix > 35 ? 3 : vix > 28 ? 2 : vix > 20 ? 1 : vix > 15 ? 0 : -1;
+        const emoFg = fg < 20 ? 3 : fg < 40 ? 2 : fg < 60 ? 1 : fg < 75 ? 0 : -1;
+        const emoOas = oas > 600 ? 3 : oas > 500 ? 2 : oas > 400 ? 1 : oas > 300 ? 0 : -1;
+        const emotionScore = emoVix + emoFg + emoOas;
+
+        const pe = gData.shiller.current;
+        const rawStock = Math.min(70, Math.max(20, Math.round(20 + trendScore * 5 + emotionScore * 4)));
+        let stockCap = 100;
+        if (pe > 39.33) stockCap = 55; else if (pe >= 36) stockCap = 65;
+        let stockTarget = Math.min(rawStock, stockCap, 70);
+
+        const qld = Math.round(Math.max(0, (stockTarget - 40) * 0.35));
+        const qqq = Math.round(stockTarget - qld);
+        const cash = Math.max(0, 100 - qld - qqq);
+
+        document.getElementById('alloc-result-area').innerHTML =
+            `<div style="text-align:center; margin-bottom:10px;">趨勢軸 <b>${trendScore.toFixed(1)}</b> ｜ 情緒軸 <b>${emotionScore}</b> ｜ 股票目標 <b style="color:#4fc3f7;font-size:26px;">${stockTarget}%</b></div>` +
+            `<div style="text-align:center; margin-bottom:10px; font-size:12px; color:#bbb;">PE護欄上限: ${stockCap === 100 ? '無上限' : stockCap + '%' }（上線設定 70%）</div>` +
+            '<div class="alloc-bar">' +
+            `<div class="alloc-item" style="width:${qld}%; background:#f44336">QLD ${qld}%</div>` +
+            `<div class="alloc-item" style="width:${qqq}%; background:#4fc3f7">QQQ ${qqq}%</div>` +
+            `<div class="alloc-item" style="width:${cash}%; background:#4caf50">現金 ${cash}%</div>` +
+            '</div>' +
+            '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; text-align:center; font-size:14px;">' +
+            `<div>QLD: <b>$${(fund*qld/100).toLocaleString()}</b></div>` +
+            `<div>QQQ: <b>$${(fund*qqq/100).toLocaleString()}</b></div>` +
+            `<div>現金: <b>$${(fund*cash/100).toLocaleString()}</b></div>` +
             '</div>';
     }
     init();
