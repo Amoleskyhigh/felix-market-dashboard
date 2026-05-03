@@ -79,14 +79,15 @@ async function fetchCreditSpread() {
 
 async function fetchMarketBreadth() {
   try {
-    const html = await fetchURL('https://www.multpl.com/s-p-500-stocks-above-200-day-moving-average');
-    // 優先抓 value 區塊，避免誤抓到頁面其他百分比（例如樣式寬度 100%）
-    const m = html.match(/class="value"[^>]*>\s*([\d.]+)%\s*</i)
-      || html.match(/S&P 500 stocks above 200-day moving average[^\d]*([\d.]+)%/i);
-    if (m) {
-      const v = parseFloat(m[1]);
-      if (Number.isFinite(v) && v >= 0 && v <= 100) return { value: v };
-    }
+    // Hard source: Barchart $S5TH = % of S&P 500 stocks above 200MA
+    const raw = await fetchURL('https://query1.finance.yahoo.com/v8/finance/chart/$S5TH?range=1mo&interval=1d');
+    const data = JSON.parse(raw);
+    const result = data?.chart?.result?.[0];
+    const p = result?.meta?.regularMarketPrice;
+    if (Number.isFinite(p) && p >= 0 && p <= 100) return { value: p, source: 'Barchart:$S5TH' };
+    const closes = result?.indicators?.quote?.[0]?.close || [];
+    const last = closes.filter(v => Number.isFinite(v)).slice(-1)[0];
+    if (Number.isFinite(last) && last >= 0 && last <= 100) return { value: last, source: 'Barchart:$S5TH' };
   } catch {}
   return null;
 }
