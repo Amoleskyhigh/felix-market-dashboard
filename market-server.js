@@ -80,8 +80,13 @@ async function fetchCreditSpread() {
 async function fetchMarketBreadth() {
   try {
     const html = await fetchURL('https://www.multpl.com/s-p-500-stocks-above-200-day-moving-average');
-    const m = html.match(/([\d.]+)%/);
-    if (m) return { value: parseFloat(m[1]) };
+    // 優先抓 value 區塊，避免誤抓到頁面其他百分比（例如樣式寬度 100%）
+    const m = html.match(/class="value"[^>]*>\s*([\d.]+)%\s*</i)
+      || html.match(/S&P 500 stocks above 200-day moving average[^\d]*([\d.]+)%/i);
+    if (m) {
+      const v = parseFloat(m[1]);
+      if (Number.isFinite(v) && v >= 0 && v <= 100) return { value: v };
+    }
   } catch {}
   return null;
 }
