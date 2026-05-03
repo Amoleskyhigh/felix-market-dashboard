@@ -147,6 +147,27 @@
                 <div id="mtd-box" style="font-size:13px;line-height:1.8">--</div>
             </div>
             <div class="card">
+                <h3>📐 雙軸評分框架（計分過程）</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div style="background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;">
+                        <div style="font-weight:700;color:#4fc3f7;margin-bottom:6px;">📈 趨勢軸（動能） <span id="trend-total" style="font-size:22px;color:#ff6b6b"></span></div>
+                        <div style="font-size:12px;color:#999;margin-bottom:6px;" id="trend-sub">--</div>
+                        <table style="margin-top:0;font-size:12px"><thead><tr><th>指標</th><th>今日值</th><th>得分</th></tr></thead>
+                        <tbody id="trend-rows"></tbody></table>
+                    </div>
+                    <div style="background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;">
+                        <div style="font-weight:700;color:#ffd54f;margin-bottom:6px;">😱 情緒軸（逆向） <span id="emotion-total" style="font-size:22px;color:#ff6b6b"></span></div>
+                        <div style="font-size:12px;color:#999;margin-bottom:6px;">高恐慌 = 加碼信號</div>
+                        <table style="margin-top:0;font-size:12px"><thead><tr><th>指標</th><th>今日值</th><th>得分</th></tr></thead>
+                        <tbody id="emotion-rows"></tbody></table>
+                    </div>
+                </div>
+                <div style="margin-top:10px;background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;display:grid;grid-template-columns:120px 1fr;gap:12px;">
+                    <div><div style="font-size:12px;color:#999">K 係數（趨勢修正）</div><div id="k-value" style="font-size:36px;font-weight:800;color:#4caf50;line-height:1;">--</div></div>
+                    <div id="k-note" style="font-size:14px;line-height:1.6;color:#ddd;">--</div>
+                </div>
+            </div>
+            <div class="card">
                 <h3>🧭 雙軸四象限（防守 / 進攻）</h3>
                 <div style="font-size:12px;line-height:1.7;margin-bottom:8px;color:#cfd8dc">
                     <div><span style="display:inline-block;width:10px;height:10px;background:rgba(76,175,80,0.6);margin-right:6px;border-radius:2px"></span>🟢 進攻區：趨勢強 + 情緒偏恐慌（建議股票 55%~70%）</div>
@@ -401,19 +422,25 @@
         const fund = parseFloat(document.getElementById('fund-input').value) || 0;
         const spx = gData.spx || gData.spy;
 
+        const copperMA3 = (gData.copper?.closes?.length >= 4) ? (gData.copper.closes.slice(-4, -1).reduce((a,b)=>a+b,0)/3) : null;
+        const tnxMA20 = (gData.tnx?.closes?.length >= 20) ? (gData.tnx.closes.slice(-20).reduce((a,b)=>a+b,0)/20) : null;
+        const dxyMA20 = (gData.dxy?.closes?.length >= 20) ? (gData.dxy.closes.slice(-20).reduce((a,b)=>a+b,0)/20) : null;
+
         const trend = {
-            copper: (gData.copper?.currentPrice && gData.copper?.closes?.length >= 4) ? (gData.copper.currentPrice > (gData.copper.closes.slice(-4, -1).reduce((a,b)=>a+b,0)/3) ? 2 : 0) : 0,
-            tnx: (gData.tnx?.currentPrice && gData.tnx?.closes?.length >= 20) ? (gData.tnx.currentPrice < (gData.tnx.closes.slice(-20).reduce((a,b)=>a+b,0)/20) ? 2 : 0) : 0,
-            dxy: (gData.dxy?.currentPrice && gData.dxy?.closes?.length >= 20) ? (gData.dxy.currentPrice < (gData.dxy.closes.slice(-20).reduce((a,b)=>a+b,0)/20) ? 2 : 0) : 0,
+            copper: (gData.copper?.currentPrice && copperMA3) ? (gData.copper.currentPrice > copperMA3 ? 2 : 0) : 0,
+            tnx: (gData.tnx?.currentPrice && tnxMA20) ? (gData.tnx.currentPrice < tnxMA20 ? 2 : 0) : 0,
+            dxy: (gData.dxy?.currentPrice && dxyMA20) ? (gData.dxy.currentPrice < dxyMA20 ? 2 : 0) : 0,
             breadth: gData.breadth?.value > 70 ? 2 : gData.breadth?.value > 50 ? 1 : 0
         };
         let K = 1.0;
+        let ma200 = null, dd = null;
         if (spx?.currentPrice && spx?.closes?.length >= 200) {
-            const ma200 = spx.closes.slice(-200).reduce((a,b)=>a+b,0)/200;
-            const dd = (spx.currentPrice - ma200) / ma200;
+            ma200 = spx.closes.slice(-200).reduce((a,b)=>a+b,0)/200;
+            dd = (spx.currentPrice - ma200) / ma200;
             if (dd < -0.15) K = 0.5; else if (dd < -0.05) K = 0.6; else if (dd < 0) K = 0.8;
         }
-        const trendScore = (trend.copper + trend.tnx + trend.dxy + trend.breadth) * K;
+        const trendRaw = (trend.copper + trend.tnx + trend.dxy + trend.breadth);
+        const trendScore = trendRaw * K;
 
         const vix = gData.vix.currentPrice;
         const fg = gData.fearGreed?.score ?? 50;
@@ -446,6 +473,22 @@
             `<div>QQQ: <b>$${(fund*qqq/100).toLocaleString()}</b></div>` +
             `<div>現金: <b>$${(fund*cash/100).toLocaleString()}</b></div>` +
             '</div>';
+
+        // 計分過程可視化（參考你附圖）
+        document.getElementById('trend-total').innerText = `${trendScore.toFixed(1)} / 8`;
+        document.getElementById('trend-sub').innerText = `原始 ${trendRaw}/8 × K=${K.toFixed(1)}`;
+        document.getElementById('emotion-total').innerText = `${emotionScore} / 9`;
+        document.getElementById('trend-rows').innerHTML = `
+            <tr><td>Copper vs MA3</td><td>${gData.copper?.currentPrice?.toFixed ? '$'+gData.copper.currentPrice.toFixed(3) : '--'}</td><td>${trend.copper>=0?'+':''}${trend.copper}</td></tr>
+            <tr><td>10Y Yield vs MA20</td><td>${gData.tnx?.currentPrice?.toFixed ? gData.tnx.currentPrice.toFixed(2)+'%' : '--'}</td><td>${trend.tnx>=0?'+':''}${trend.tnx}</td></tr>
+            <tr><td>DXY vs MA20</td><td>${gData.dxy?.currentPrice?.toFixed ? gData.dxy.currentPrice.toFixed(1) : '--'}</td><td>${trend.dxy>=0?'+':''}${trend.dxy}</td></tr>
+            <tr><td>市場廣度</td><td>${gData.breadth?.value?.toFixed ? gData.breadth.value.toFixed(1)+'%' : '--'}</td><td>${trend.breadth>=0?'+':''}${trend.breadth}</td></tr>`;
+        document.getElementById('emotion-rows').innerHTML = `
+            <tr><td>VIX</td><td>${vix?.toFixed ? vix.toFixed(1) : '--'}</td><td>${emoVix>=0?'+':''}${emoVix}</td></tr>
+            <tr><td>Fear & Greed</td><td>${fg}</td><td>${emoFg>=0?'+':''}${emoFg}</td></tr>
+            <tr><td>HY OAS</td><td>${Math.round(oas)}bp</td><td>${emoOas>=0?'+':''}${emoOas}</td></tr>`;
+        document.getElementById('k-value').innerText = K.toFixed(1);
+        document.getElementById('k-note').innerText = ma200 ? `SPX vs MA200\nSPX ${spx.currentPrice.toFixed(1)} vs MA200 ${ma200.toFixed(1)} (${(dd*100).toFixed(1)}%)` : 'MA200 資料不足';
 
         renderQuadrant(trendScore, emotionScore);
     }
