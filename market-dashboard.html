@@ -125,6 +125,11 @@
                 <div id="mtd-box" style="font-size:13px;line-height:1.8">--</div>
             </div>
             <div class="card">
+                <h3>🧭 雙軸四象限（防守 / 進攻）</h3>
+                <div class="chart-container" style="height:240px"><canvas id="chart-quadrant"></canvas></div>
+                <div id="quadrant-note" style="font-size:12px;color:#bbb;margin-top:8px">--</div>
+            </div>
+            <div class="card">
                 <h3>📜 科技革命估值參考</h3>
                 <table>
                     <thead><tr><th>時代</th><th>均值</th><th>標差</th></tr></thead>
@@ -281,6 +286,31 @@
         document.getElementById('mtd-box').innerHTML = html;
     }
 
+    let quadrantChart = null;
+    function renderQuadrant(trendScore, emotionScore) {
+        const note = document.getElementById('quadrant-note');
+        const mode = (trendScore >= 4 && emotionScore >= 2) ? '🟢 進攻區' :
+                     (trendScore < 4 && emotionScore >= 2) ? '🟡 逆向佈局區' :
+                     (trendScore >= 4 && emotionScore < 2) ? '🟠 趨勢續抱區' : '🔴 防守區';
+        note.innerText = `今日位置：${mode}（趨勢=${trendScore.toFixed(1)}, 情緒=${emotionScore}）`;
+
+        const ctx = document.getElementById('chart-quadrant');
+        if (!ctx) return;
+        if (quadrantChart) quadrantChart.destroy();
+        quadrantChart = new Chart(ctx, {
+            type: 'scatter',
+            data: { datasets: [{ label: 'Today', data: [{x: trendScore, y: emotionScore}], pointRadius: 8, pointBackgroundColor: '#4fc3f7' }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { min: 0, max: 8, title: { display: true, text: '趨勢軸' }, grid: { color: '#334' } },
+                    y: { min: -2, max: 10, title: { display: true, text: '情緒軸' }, grid: { color: '#334' } }
+                }
+            }
+        });
+    }
+
     function updateAlloc() {
         if (!gData || !gData.shiller || !gData.vix || !gData.tnx) return;
         const fund = parseFloat(document.getElementById('fund-input').value) || 0;
@@ -331,6 +361,8 @@
             `<div>QQQ: <b>$${(fund*qqq/100).toLocaleString()}</b></div>` +
             `<div>現金: <b>$${(fund*cash/100).toLocaleString()}</b></div>` +
             '</div>';
+
+        renderQuadrant(trendScore, emotionScore);
     }
     init();
 </script>
