@@ -129,9 +129,9 @@
                 <div class="card"><h3>📉 Shiller PE (均值/σ 視覺化)</h3><div class="chart-container"><canvas id="chart-pe"></canvas></div></div>
                 <div class="card"><h3>💎 SMH 半導體走勢</h3><div class="chart-container"><canvas id="chart-smh"></canvas></div></div>
                 <div class="card"><h3>😱 VIX 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-vix"></canvas></div></div>
-                <div class="card"><h3>💵 DXY 美元走勢</h3><div class="chart-container"><canvas id="chart-dxy"></canvas></div></div>
-                <div class="card"><h3>🏦 10Y Yield 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-tnx"></canvas></div></div>
-                <div class="card"><h3>🏗️ Copper 銅價走勢</h3><div class="chart-container"><canvas id="chart-hg"></canvas></div></div>
+                <div class="card"><h3>💵 DXY 美元走勢（含 MA20）</h3><div class="chart-container"><canvas id="chart-dxy"></canvas></div></div>
+                <div class="card"><h3>🏦 10Y Yield 走勢（含 MA20 / 警戒線）</h3><div class="chart-container"><canvas id="chart-tnx"></canvas></div></div>
+                <div class="card"><h3>🏗️ Copper 銅價走勢（半年＋MA3）</h3><div class="chart-container"><canvas id="chart-hg"></canvas></div></div>
             </div>
         </div>
         <div class="right-column">
@@ -295,6 +295,19 @@
             document.getElementById('s-hg').innerText = 'LME 銅價';
         }
     }
+    function movingAverage(arr, n) {
+        if (!arr || arr.length < n) return arr?.map(() => null) || [];
+        const out = [];
+        for (let i = 0; i < arr.length; i++) {
+            if (i < n - 1) out.push(null);
+            else {
+                const s = arr.slice(i - n + 1, i + 1).reduce((a,b)=>a+b,0);
+                out.push(s / n);
+            }
+        }
+        return out;
+    }
+
     function renderCharts() {
         const d = gData;
         if (d.qqq) draw('chart-qqq', d.qqq, '#4fc3f7', 'QQQ', []);
@@ -304,19 +317,30 @@
         }
         if (d.smh) draw('chart-smh', d.smh, '#ce93d8', 'SMH', []);
         if (d.vix) draw('chart-vix', d.vix, '#f44336', 'VIX', [25, 15]);
-        if (d.dxy) draw('chart-dxy', d.dxy, '#81c784', 'DXY', []);
-        if (d.tnx) draw('chart-tnx', d.tnx, '#ffd54f', 'Yield', [4.5, 3.5]);
-        if (d.copper) draw('chart-hg', d.copper, '#ff7043', 'Copper', []);
+        if (d.dxy) draw('chart-dxy', d.dxy, '#81c784', 'DXY', [], [{ period:20, color:'#90caf9', label:'MA20' }]);
+        if (d.tnx) draw('chart-tnx', d.tnx, '#ffd54f', 'Yield', [4.5, 3.5], [{ period:20, color:'#90caf9', label:'MA20' }]);
+        if (d.copper) draw('chart-hg', d.copper, '#ff7043', 'Copper', [], [{ period:3, color:'#90caf9', label:'MA3' }]);
     }
-    function draw(id, data, color, label, lines) {
+    function draw(id, data, color, label, lines, maDefs = []) {
         if (!data || !data.timestamps) return;
         const datasets = [{ label: label, data: data.closes, borderColor: color, borderWidth: 1.5, pointRadius: 0, fill: false }];
-        lines.forEach((val, idx) => {
+        lines.forEach((val) => {
             datasets.push({ label: 'Ref', data: data.closes.map(() => val), borderColor: '#444', borderDash: [5,5], pointRadius: 0, fill: false, borderWidth: 1 });
         });
+        maDefs.forEach(def => {
+            datasets.push({
+                label: def.label || `MA${def.period}`,
+                data: movingAverage(data.closes, def.period),
+                borderColor: def.color || '#90caf9',
+                borderWidth: 1.2,
+                pointRadius: 0,
+                borderDash: [4,3],
+                fill: false
+            });
+        });
         new Chart(document.getElementById(id), {
-            type: 'line', data: { labels: data.timestamps.map(t => new Date(t)), datasets: datasets },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { type: 'time', ticks: { maxTicksLimit: 5 } } } }
+            type: 'line', data: { labels: data.timestamps.map(t => new Date(t)), datasets },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { x: { type: 'time', ticks: { maxTicksLimit: 5 } } } }
         });
     }
     function mtdOf(asset) {
