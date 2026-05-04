@@ -92,15 +92,39 @@ async function fetchMarketBreadth() {
   return null;
 }
 
+async function fetchUsdTwd() {
+  // Primary: Yahoo TWD=X
+  const y = await fetchYahooChart('TWD=X');
+  if (y?.currentPrice) return { ...y, source: 'Yahoo:TWD=X' };
+
+  // Fallback: exchangerate.host
+  try {
+    const raw = await fetchURL('https://api.exchangerate.host/convert?from=USD&to=TWD');
+    const j = JSON.parse(raw);
+    const v = j?.result;
+    if (Number.isFinite(v)) {
+      return {
+        symbol: 'USD/TWD',
+        currentPrice: v,
+        previousClose: null,
+        timestamps: [Date.now()],
+        closes: [v],
+        source: 'exchangerate.host'
+      };
+    }
+  } catch {}
+  return null;
+}
+
 async function getAllData() {
-  const [qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, dxy, tnx, shiller, fearGreed, creditSpread, copper, breadth] = await Promise.all([
+  const [qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, usdtwd, dxy, tnx, shiller, fearGreed, creditSpread, copper, breadth] = await Promise.all([
     fetchYahooChart('QQQ'), fetchYahooChart('SMH'), fetchYahooChart('BOXX'), fetchYahooChart('SPY'), fetchYahooChart('^GSPC'),
-    fetchYahooChart('^IXIC'), fetchYahooChart('^SOX'), fetchYahooChart('QLD'), fetchYahooChart('^VIX'), fetchYahooChart('TWD=X'),
+    fetchYahooChart('^IXIC'), fetchYahooChart('^SOX'), fetchYahooChart('QLD'), fetchYahooChart('^VIX'), fetchUsdTwd(),
     fetchYahooChart('DX-Y.NYB'), fetchYahooChart('^TNX'), fetchShillerPE(), fetchFearGreed(), fetchCreditSpread(),
     fetchYahooChart('HG=F'), fetchMarketBreadth()
   ]);
 
-  return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, twd, dxy, tnx, shiller, fearGreed, creditSpread, copper, breadth, timestamp: Date.now() };
+  return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, usdtwd, twd: usdtwd, dxy, tnx, shiller, fearGreed, creditSpread, copper, breadth, timestamp: Date.now() };
 }
 
 function isHealthyPayload(d) {

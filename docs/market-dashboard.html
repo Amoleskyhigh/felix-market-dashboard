@@ -288,7 +288,8 @@
             document.getElementById('s-br').innerText = br > 80 ? '🔴 過熱' : br > 50 ? '🟡 中性' : '🟢 偏弱可觀察';
             document.getElementById('s-br').className = 'kpi-status ' + (br > 80 ? 'down' : br > 50 ? 'neutral' : 'up');
         }
-        if (d.twd) document.getElementById('v-twd').innerText = d.twd.currentPrice.toFixed(2);
+        const twdObj = d.usdtwd || d.twd;
+        if (twdObj?.currentPrice) document.getElementById('v-twd').innerText = twdObj.currentPrice.toFixed(2);
         if (d.copper) {
             const hg = d.copper.currentPrice;
             document.getElementById('v-hg').innerText = '$' + hg.toFixed(2);
