@@ -70,31 +70,8 @@
                 </div>
                 <div id="alloc-result-area"></div>
                 <div class="formula-box" id="formula-display">
-                    <b>雙軸評分框架（v2，同步版）</b><br>
-                    最終判讀 = 趨勢軸 × K + 情緒軸，再套用 PE 護欄與上線上限（70%）<br><br>
-
-                    <b>📈 趨勢軸（0~8 分，先加總再乘 K）</b><br>
-                    • Copper vs MA3：高於 +2，否則 +0<br>
-                    • 10Y Yield vs MA20：低於 +2，否則 +0<br>
-                    • DXY vs MA20：低於 +2，否則 +0<br>
-                    • 市場廣度：>70% +2；>50% +1；其餘 +0<br><br>
-
-                    <b>K 係數（SPX 相對 MA200）</b><br>
-                    • MA200 以上：1.0<br>
-                    • MA200 下 0~5%：0.8<br>
-                    • MA200 下 5~15%：0.6<br>
-                    • MA200 下 15%+：0.5<br><br>
-
-                    <b>😱 情緒軸（-3~+9 分，逆向）</b><br>
-                    • VIX：>35 +3；>28 +2；>20 +1；>15 +0；≤15 -1<br>
-                    • Fear & Greed：<20 +3；<40 +2；<60 +1；<75 +0；≥75 -1<br>
-                    • HY OAS (bp)：>600 +3；>500 +2；>400 +1；>300 +0；≤300 -1<br><br>
-
-                    <b>🛡️ Shiller PE 護欄 + 上線限制</b><br>
-                    • PE < 36：無護欄上限<br>
-                    • PE 36~39.33：股票上限 65%<br>
-                    • PE > 39.33：股票上限 55%<br>
-                    • 全系統上線上限固定：<b>70%</b>
+                    <b>配置摘要</b><br>
+                    這裡只顯示配置結果；完整雙軸計分規則已移到右側「雙軸評分框架（計分過程）」視窗。
                 </div>
             </div>
             <div class="chart-grid">
@@ -146,7 +123,7 @@
                 <h3>📅 本月 MTD 表現</h3>
                 <div id="mtd-box" style="font-size:13px;line-height:1.8">--</div>
             </div>
-            <div class="card">
+            <div class="card" style="padding:22px;">
                 <h3>📐 雙軸評分框架（計分過程）</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                     <div style="background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;">
@@ -165,6 +142,24 @@
                 <div style="margin-top:10px;background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;display:grid;grid-template-columns:120px 1fr;gap:12px;">
                     <div><div style="font-size:12px;color:#999">K 係數（趨勢修正）</div><div id="k-value" style="font-size:36px;font-weight:800;color:#4caf50;line-height:1;">--</div></div>
                     <div id="k-note" style="font-size:14px;line-height:1.6;color:#ddd;">--</div>
+                </div>
+                <div style="margin-top:10px;background:#0f1923;border:1px dashed #2a3a4a;border-radius:10px;padding:12px;font-size:13px;line-height:1.8;color:#cfd8dc;">
+                    <b>雙軸評分框架（v2，同步版）</b><br>
+                    最終判讀 = 趨勢軸 × K + 情緒軸，再套用 PE 護欄與上線上限（70%）<br><br>
+                    <b>📈 趨勢軸（0~8 分，先加總再乘 K）</b><br>
+                    • Copper vs MA3：高於 +2，否則 +0<br>
+                    • 10Y Yield vs MA20：低於 +2，否則 +0<br>
+                    • DXY vs MA20：低於 +2，否則 +0<br>
+                    • 市場廣度：>70% +2；>50% +1；其餘 +0<br><br>
+                    <b>K 係數（SPX 相對 MA200）</b><br>
+                    • MA200 以上：1.0　• MA200 下 0~5%：0.8　• MA200 下 5~15%：0.6　• MA200 下 15%+：0.5<br><br>
+                    <b>😱 情緒軸（-3~+9 分，逆向）</b><br>
+                    • VIX：>35 +3；>28 +2；>20 +1；>15 +0；≤15 -1<br>
+                    • Fear & Greed：<20 +3；<40 +2；<60 +1；<75 +0；≥75 -1<br>
+                    • HY OAS (bp)：>600 +3；>500 +2；>400 +1；>300 +0；≤300 -1<br><br>
+                    <b>🛡️ Shiller PE 護欄 + 上線限制</b><br>
+                    • PE < 36：無護欄上限　• PE 36~39.33：股票上限 65%　• PE > 39.33：股票上限 55%<br>
+                    • 全系統上線上限固定：70%
                 </div>
             </div>
             <div class="card">
