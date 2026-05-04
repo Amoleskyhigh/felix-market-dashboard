@@ -296,14 +296,14 @@
         }
     }
     function movingAverage(arr, n) {
-        if (!arr || arr.length < n) return arr?.map(() => null) || [];
+        if (!arr || !arr.length) return [];
         const out = [];
+        const win = [];
         for (let i = 0; i < arr.length; i++) {
-            if (i < n - 1) out.push(null);
-            else {
-                const s = arr.slice(i - n + 1, i + 1).reduce((a,b)=>a+b,0);
-                out.push(s / n);
-            }
+            const v = arr[i];
+            if (Number.isFinite(v)) win.push(v);
+            if (win.length > n) win.shift();
+            out.push(win.length === n ? (win.reduce((a,b)=>a+b,0) / n) : null);
         }
         return out;
     }
