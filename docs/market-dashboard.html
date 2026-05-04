@@ -121,7 +121,7 @@
                 <div id="alloc-result-area"></div>
                 <div class="formula-box" id="formula-display">
                     <b>配置摘要</b><br>
-                    這裡只顯示配置結果；完整雙軸計分規則已移到右側「雙軸評分框架（計分過程）」視窗。
+                    這裡只顯示配置結果；完整雙軸計分規則已移到上方「雙軸評分框架（計分過程）」視窗。
                 </div>
             </div>
             <div class="chart-grid">
@@ -173,56 +173,8 @@
                 <h3>📅 本月 MTD 表現</h3>
                 <div id="mtd-box" style="font-size:13px;line-height:1.8">--</div>
             </div>
-            <div class="card" style="padding:22px;">
-                <h3>📐 雙軸評分框架（計分過程）</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div style="background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;">
-                        <div style="font-weight:700;color:#4fc3f7;margin-bottom:6px;">📈 趨勢軸（動能） <span id="trend-total" style="font-size:22px;color:#ff6b6b"></span></div>
-                        <div style="font-size:12px;color:#999;margin-bottom:6px;" id="trend-sub">--</div>
-                        <table style="margin-top:0;font-size:12px"><thead><tr><th>指標</th><th>今日值</th><th>得分</th></tr></thead>
-                        <tbody id="trend-rows"></tbody></table>
-                    </div>
-                    <div style="background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;">
-                        <div style="font-weight:700;color:#ffd54f;margin-bottom:6px;">😱 情緒軸（逆向） <span id="emotion-total" style="font-size:22px;color:#ff6b6b"></span></div>
-                        <div style="font-size:12px;color:#999;margin-bottom:6px;">高恐慌 = 加碼信號</div>
-                        <table style="margin-top:0;font-size:12px"><thead><tr><th>指標</th><th>今日值</th><th>得分</th></tr></thead>
-                        <tbody id="emotion-rows"></tbody></table>
-                    </div>
-                </div>
-                <div style="margin-top:10px;background:#16243a;border:1px solid #2a3a4a;border-radius:10px;padding:10px;display:grid;grid-template-columns:120px 1fr;gap:12px;">
-                    <div><div style="font-size:12px;color:#999">K 係數（趨勢修正）</div><div id="k-value" style="font-size:36px;font-weight:800;color:#4caf50;line-height:1;">--</div></div>
-                    <div id="k-note" style="font-size:14px;line-height:1.6;color:#ddd;">--</div>
-                </div>
-                <div style="margin-top:10px;background:#0f1923;border:1px dashed #2a3a4a;border-radius:10px;padding:12px;font-size:13px;line-height:1.8;color:#cfd8dc;">
-                    <b>雙軸評分框架（v2，同步版）</b><br>
-                    最終判讀 = 趨勢軸 × K + 情緒軸，再套用 PE 護欄與上線上限（70%）<br><br>
-                    <b>📈 趨勢軸（0~8 分，先加總再乘 K）</b><br>
-                    • Copper vs MA3：高於 +2，否則 +0<br>
-                    • 10Y Yield vs MA20：低於 +2，否則 +0<br>
-                    • DXY vs MA20：低於 +2，否則 +0<br>
-                    • 市場廣度：>70% +2；>50% +1；其餘 +0<br><br>
-                    <b>K 係數（SPX 相對 MA200）</b><br>
-                    • MA200 以上：1.0　• MA200 下 0~5%：0.8　• MA200 下 5~15%：0.6　• MA200 下 15%+：0.5<br><br>
-                    <b>😱 情緒軸（-3~+9 分，逆向）</b><br>
-                    • VIX：>35 +3；>28 +2；>20 +1；>15 +0；≤15 -1<br>
-                    • Fear & Greed：<20 +3；<40 +2；<60 +1；<75 +0；≥75 -1<br>
-                    • HY OAS (bp)：>600 +3；>500 +2；>400 +1；>300 +0；≤300 -1<br><br>
-                    <b>🛡️ Shiller PE 護欄 + 上線限制</b><br>
-                    • PE < 36：無護欄上限　• PE 36~39.33：股票上限 65%　• PE > 39.33：股票上限 55%<br>
-                    • 全系統上線上限固定：70%
-                </div>
-            </div>
-            <div class="card">
-                <h3>🧭 雙軸四象限（防守 / 進攻）</h3>
-                <div style="font-size:12px;line-height:1.7;margin-bottom:8px;color:#cfd8dc">
-                    <div><span style="display:inline-block;width:10px;height:10px;background:rgba(76,175,80,0.6);margin-right:6px;border-radius:2px"></span>🟢 進攻區：趨勢強 + 情緒偏恐慌（建議股票 55%~70%）</div>
-                    <div><span style="display:inline-block;width:10px;height:10px;background:rgba(255,214,102,0.7);margin-right:6px;border-radius:2px"></span>🟡 逆向佈局區：趨勢偏弱 + 情緒恐慌（建議股票 45%~60%）</div>
-                    <div><span style="display:inline-block;width:10px;height:10px;background:rgba(255,152,0,0.6);margin-right:6px;border-radius:2px"></span>🟠 趨勢續抱區：趨勢強 + 情緒中性/偏熱（建議股票 50%~65%）</div>
-                    <div><span style="display:inline-block;width:10px;height:10px;background:rgba(244,67,54,0.6);margin-right:6px;border-radius:2px"></span>🔴 防守區：趨勢弱 + 情緒不恐慌（建議股票 35%~50%）</div>
-                </div>
-                <div class="chart-container" style="height:240px"><canvas id="chart-quadrant"></canvas></div>
-                <div id="quadrant-note" style="font-size:12px;color:#bbb;margin-top:8px">--</div>
-            </div>
+            
+            
             <div class="card">
                 <h3>📜 科技革命估值參考</h3>
                 <table>
