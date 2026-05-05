@@ -70,28 +70,44 @@ async function fetchFearGreed() {
 }
 
 async function fetchCreditSpread() {
-  try {
-    const csv = await fetchURL('https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2');
-    const lines = csv.trim().split('\n').slice(1).reverse();
-    for (const line of lines) {
-      const v = parseFloat(line.split(',')[1]);
-      if (!Number.isNaN(v)) return { value: v, symbol: 'BAMLH0A0HYM2' };
-    }
-  } catch {}
+  const urls = [
+    'https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2',
+    'https://fred.stlouisfed.org/series/BAMLH0A0HYM2/downloaddata/BAMLH0A0HYM2.csv'
+  ];
+  for (const u of urls) {
+    try {
+      const csv = await fetchURL(u, 10000);
+      const lines = csv.trim().split('\n').slice(1).reverse();
+      for (const line of lines) {
+        const v = parseFloat((line.split(',')[1] || '').replace(/"/g, ''));
+        if (!Number.isNaN(v)) return { value: v, symbol: 'BAMLH0A0HYM2' };
+      }
+    } catch {}
+  }
   return null;
 }
 
 async function fetchMarketBreadth() {
   try {
-    // Hard source: Barchart $S5TH = % of S&P 500 stocks above 200MA
-    const raw = await fetchURL('https://query1.finance.yahoo.com/v8/finance/chart/$S5TH?range=1mo&interval=1d');
+    const raw = await fetchURL('https://query1.finance.yahoo.com/v8/finance/chart/$S5TH?range=1mo&interval=1d', 10000);
     const data = JSON.parse(raw);
     const result = data?.chart?.result?.[0];
     const p = result?.meta?.regularMarketPrice;
-    if (Number.isFinite(p) && p >= 0 && p <= 100) return { value: p, source: 'Barchart:$S5TH' };
+    if (Number.isFinite(p) && p >= 0 && p <= 100) return { value: p, source: 'Barchart:$S5TH(yahoo)' };
     const closes = result?.indicators?.quote?.[0]?.close || [];
     const last = closes.filter(v => Number.isFinite(v)).slice(-1)[0];
-    if (Number.isFinite(last) && last >= 0 && last <= 100) return { value: last, source: 'Barchart:$S5TH' };
+    if (Number.isFinite(last) && last >= 0 && last <= 100) return { value: last, source: 'Barchart:$S5TH(yahoo)' };
+  } catch {}
+
+  // Fallback: parse Barchart page
+  try {
+    const html = await fetchURL('https://www.barchart.com/stocks/quotes/$S5TH', 12000);
+    const m = html.match(/"lastPrice"\s*:\s*"?([0-9]+(?:\.[0-9]+)?)"?/i)
+      || html.match(/"raw"\s*:\s*([0-9]+(?:\.[0-9]+)?)/i);
+    if (m) {
+      const v = parseFloat(m[1]);
+      if (Number.isFinite(v) && v >= 0 && v <= 100) return { value: v, source: 'Barchart:$S5TH(page)' };
+    }
   } catch {}
   return null;
 }
