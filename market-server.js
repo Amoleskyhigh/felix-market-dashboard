@@ -5,17 +5,21 @@ const path = require('path');
 
 const PORT = 8899;
 
-function fetchURL(url) {
+function fetchURL(url, timeoutMs = 12000) {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith('https') ? https : http;
-    mod.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+    const req = mod.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchURL(res.headers.location).then(resolve).catch(reject);
+        return fetchURL(res.headers.location, timeoutMs).then(resolve).catch(reject);
       }
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => resolve(data));
-    }).on('error', reject);
+    });
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`timeout ${timeoutMs}ms: ${url}`));
+    });
+    req.on('error', reject);
   });
 }
 
