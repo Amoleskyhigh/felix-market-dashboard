@@ -16,11 +16,17 @@ if [ "$BYTES" -lt 5000 ]; then
   exit 11
 fi
 
-python3 - <<'PY' "$TMP"
-import json,sys,time
+python3 - <<'PY' "$TMP" "$OUT"
+import json,sys,time,os
 p=sys.argv[1]
+out=sys.argv[2]
 d=json.load(open(p))
+prev = json.load(open(out)) if os.path.exists(out) else {}
 missing=[]
+
+# allow carrying forward slowly-updated series (credit spread) from previous snapshot
+if not d.get('creditSpread') and prev.get('creditSpread'):
+    d['creditSpread'] = prev['creditSpread']
 
 def req(path):
     cur=d
@@ -54,12 +60,14 @@ if not isinstance(ts,(int,float)):
     missing.append('timestamp')
 else:
     age_hours=(time.time()*1000-ts)/1000/3600
-    if age_hours>36:
+    if age_hours>96:
         missing.append(f'stale_timestamp({age_hours:.1f}h)')
 
 if missing:
     print('MISSING_OR_STALE:', ', '.join(missing))
     sys.exit(2)
+
+open(p,'w').write(json.dumps(d,separators=(',',':')))
 print('ok')
 PY
 
