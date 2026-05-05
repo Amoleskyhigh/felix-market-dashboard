@@ -4,11 +4,16 @@ cd "$(dirname "$0")/.."
 TMP="/tmp/market-snapshot-$$.json"
 OUT="docs/market-data-snapshot.json"
 
-curl -s --max-time 40 http://localhost:8899/api/data > "$TMP"
+CURL_URL="http://127.0.0.1:8899/api/data"
+if ! curl -fsS --retry 2 --retry-delay 2 --retry-connrefused --max-time 80 "$CURL_URL" > "$TMP"; then
+  code=$?
+  echo "ERROR: fetch api failed (code=$code, url=$CURL_URL)"
+  exit $code
+fi
 BYTES=$(wc -c < "$TMP" | tr -d ' ')
 if [ "$BYTES" -lt 5000 ]; then
-  echo "snapshot too small ($BYTES), keep previous file"
-  exit 1
+  echo "ERROR: snapshot too small ($BYTES), keep previous file"
+  exit 11
 fi
 
 python3 - <<'PY' "$TMP"
