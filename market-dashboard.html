@@ -3,368 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股市研究儀表板 - 專業加強版</title>
+    <title>股市研究儀表板 — Enhanced V2</title>
+    <meta name="description" content="Enhanced Market Research Dashboard with daily decision engine, action signals, and advanced analytics.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, sans-serif; background: #0f1923; color: #e0e0e0; padding: 20px; }
-        .dashboard { max-width: 1400px; margin: 0 auto; }
-        h1 { text-align: center; color: #4fc3f7; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
-        #status-bar { padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; background: #2a3a4a; font-weight: bold; font-size: 14px; }
-        .success { background: #1e3a2c; color: #4caf50; }
-        .error { background: #442727; color: #ff5252; }
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .kpi-card { background: #1a2332; border: 1px solid #2a3a4a; border-radius: 12px; padding: 15px; text-align: center; }
-        .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; }
-        .kpi-value { font-size: 24px; font-weight: bold; color: #fff; }
-        .kpi-status { font-size: 11px; margin-top: 5px; font-weight: 600; }
-        .main-content { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
-        @media (max-width: 1100px) { .main-content { grid-template-columns: 1fr; } }
-        .card { background: #1a2332; border: 1px solid #2a3a4a; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .card h3 { color: #4fc3f7; margin-bottom: 15px; font-size: 18px; }
-        .calc-container { background: #1a2332; border: 2px solid #4fc3f7; }
-        .fund-input-group { background: #0f1923; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-        .fund-input-group input { background: transparent; border: none; border-bottom: 2px solid #4fc3f7; color: #4fc3f7; font-size: 28px; font-weight: bold; width: 150px; text-align: center; outline: none; }
-        .alloc-bar { display: flex; height: 35px; border-radius: 6px; overflow: hidden; margin: 15px 0; border: 1px solid #000; }
-        .alloc-item { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #000; transition: width 0.5s; }
-        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
-        .chart-container { position: relative; height: 220px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
-        th { text-align: left; color: #4fc3f7; padding: 8px; border-bottom: 2px solid #2a3a4a; }
-        td { padding: 8px; border-bottom: 1px solid #2a3a4a; }
-        .up { color: #4caf50; } .down { color: #f44336; } .neutral { color: #ff9800; }
-        .formula-box { background: #0f1923; padding: 12px; border-radius: 8px; font-size: 12px; color: #777; line-height: 1.6; margin-top: 15px; border: 1px dashed #2a3a4a; }
-    </style>
+    <link rel="stylesheet" href="dashboard-styles.css">
 </head>
 <body>
-<div class="dashboard">
-    <h1>📊 股市研究儀表板 <small style="font-size:12px;color:#888">專業加強版</small></h1>
-    <p class="subtitle">AI 時代基準 · 指標視覺化警戒 · 綜合配置模型</p>
-    <div id="status-bar">⏳ 正在同步伺服器數據...</div>
-    <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-label">Shiller PE</div><div id="v-pe" class="kpi-value">--</div><div id="s-pe" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">S&P 500</div><div id="v-spx" class="kpi-value">--</div><div id="s-spx" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">NASDAQ</div><div id="v-ixic" class="kpi-value">--</div><div id="s-ixic" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">PHLX SOX</div><div id="v-sox" class="kpi-value">--</div><div id="s-sox" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">QQQ</div><div id="v-qqq" class="kpi-value">--</div><div id="s-qqq" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">SMH</div><div id="v-smh" class="kpi-value">--</div><div id="s-smh" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">BOXX</div><div id="v-boxx" class="kpi-value">--</div><div id="s-boxx" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">VIX</div><div id="v-vix" class="kpi-value">--</div><div id="s-vix" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">DXY</div><div id="v-dxy" class="kpi-value">--</div><div id="s-dxy" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">10Y Yield</div><div id="v-tnx" class="kpi-value">--</div><div id="s-tnx" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">Fear/Greed</div><div id="v-fg" class="kpi-value">--</div><div id="s-fg" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">Credit Spread</div><div id="v-cs" class="kpi-value">--</div><div id="s-cs" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">USD/TWD</div><div id="v-twd" class="kpi-value">--</div><div id="s-twd" class="kpi-status">--</div></div>
-        <div class="kpi-card"><div class="kpi-label">Copper (銅)</div><div id="v-hg" class="kpi-value">--</div><div id="s-hg" class="kpi-status">--</div></div>
+<div class="dashboard" id="dashboard">
+    <!-- ACTION BANNER -->
+    <div id="action-banner" class="action-banner">
+        <div class="banner-icon">📍</div>
+        <div class="banner-text">
+            <div class="banner-zone" id="banner-zone">Loading...</div>
+            <div class="banner-detail" id="banner-detail">Fetching market data...</div>
+        </div>
+        <div class="banner-alloc" id="banner-alloc">--%</div>
     </div>
+
+    <h1 class="title">📊 股市研究儀表板 <span class="version-badge">Enhanced V2</span></h1>
+    <p class="subtitle">AI 時代基準 · 指標視覺化警戒 · 每日決策引擎</p>
+    <div id="status-bar" class="status-bar">⏳ 正在同步伺服器數據...</div>
+
+    <!-- CONVERGENCE ALERT (hidden by default) -->
+    <div id="convergence-alert" class="convergence-alert hidden">
+        <div class="conv-icon">🚨</div>
+        <div class="conv-text" id="conv-text"></div>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row" id="kpi-row">
+        <!-- KPI cards generated by JS -->
+    </div>
+
+    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="left-column">
-            <div class="card calc-container">
-                <h3>💰 新資金配置決策模型</h3>
-                <div class="fund-input-group">
-                    新資金預算：<input type="number" id="fund-input" value="10000" oninput="updateAlloc()"> USD
+            <!-- Dual-Axis Scoring -->
+            <div class="card glass" style="padding:22px;">
+                <h3>📐 雙軸評分框架（計分過程）</h3>
+                <div class="scoring-grid">
+                    <div class="scoring-panel trend-panel">
+                        <div class="panel-title"><span class="panel-icon">📈</span> 趨勢軸（動能） <span id="trend-total" class="score-big"></span></div>
+                        <div class="panel-sub" id="trend-sub">--</div>
+                        <table><thead><tr><th>指標</th><th>今日值</th><th>得分</th></tr></thead>
+                        <tbody id="trend-rows"></tbody></table>
+                    </div>
+                    <div class="scoring-panel emotion-panel">
+                        <div class="panel-title"><span class="panel-icon">😱</span> 情緒軸（逆向） <span id="emotion-total" class="score-big"></span></div>
+                        <div class="panel-sub">高恐慌 = 加碼信號</div>
+                        <table><thead><tr><th>指標</th><th>今日值</th><th>得分</th></tr></thead>
+                        <tbody id="emotion-rows"></tbody></table>
+                    </div>
                 </div>
-                <div id="alloc-result-area"></div>
-                <div class="formula-box" id="formula-display">
-                    <b>雙軸配置模型（v2）</b><br>
-                    趨勢軸（Copper / 10Y / DXY / Breadth）× K + 情緒軸（VIX / F&G / HY OAS）<br>
-                    • K 係數：MA200以上=1.0，下0~5%=0.8，下5~15%=0.6，下15%+=0.5。<br>
-                    • Shiller PE 護欄：PE 36~39.33 股票上限 65%；PE >39.33 上限 55%。<br>
-                    • 上線股票上限固定：<b>70%</b>。
+                <div class="k-box">
+                    <div><div class="k-label">K 係數（趨勢修正）</div><div id="k-value" class="k-val">--</div></div>
+                    <div id="k-note" class="k-note">--</div>
+                </div>
+                <div class="formula-box">
+                    <b>雙軸評分框架（v2，同步版）</b><br>
+                    最終判讀 = 趨勢軸 × K + 情緒軸，再套用 PE 護欄與上線上限（70%）<br><br>
+                    <b>📈 趨勢軸（0~8 分，先加總再乘 K）</b><br>
+                    • Copper vs MA3：高於 +2，否則 +0<br>• 10Y Yield vs MA20：低於 +2，否則 +0<br>• DXY vs MA20：低於 +2，否則 +0<br>• 市場廣度：>70% +2；>50% +1；其餘 +0<br><br>
+                    <b>K 係數（SPX 相對 MA200）</b><br>
+                    • MA200 以上：1.0　• MA200 下 0~5%：0.8　• MA200 下 5~15%：0.6　• MA200 下 15%+：0.5<br><br>
+                    <b>😱 情緒軸（-3~+9 分，逆向）</b><br>
+                    • VIX：>35 +3；>28 +2；>20 +1；>15 +0；≤15 -1<br>• Fear & Greed：<20 +3；<40 +2；<60 +1；<75 +0；≥75 -1<br>• HY OAS (bp)：>600 +3；>500 +2；>400 +1；>300 +0；≤300 -1<br><br>
+                    <b>🛡️ Shiller PE 護欄 + 上線限制</b><br>
+                    • PE < 36：無護欄上限　• PE 36~39.33：股票上限 65%　• PE > 39.33：股票上限 55%<br>• 全系統上線上限固定：70%
                 </div>
             </div>
+
+            <!-- Quadrant Chart -->
+            <div class="card glass">
+                <h3>🧭 雙軸四象限（防守 / 進攻）</h3>
+                <div class="quadrant-legend">
+                    <div><span class="legend-dot" style="background:rgba(76,175,80,0.6)"></span>🟢 進攻區：趨勢強 + 情緒偏恐慌（55%~70%）</div>
+                    <div><span class="legend-dot" style="background:rgba(255,214,102,0.7)"></span>🟡 逆向佈局區：趨勢偏弱 + 情緒恐慌（45%~60%）</div>
+                    <div><span class="legend-dot" style="background:rgba(255,152,0,0.6)"></span>🟠 趨勢續抱區：趨勢強 + 情緒中性/偏熱（50%~65%）</div>
+                    <div><span class="legend-dot" style="background:rgba(244,67,54,0.6)"></span>🔴 防守區：趨勢弱 + 情緒不恐慌（35%~50%）</div>
+                </div>
+                <div class="chart-container" style="height:260px"><canvas id="chart-quadrant"></canvas></div>
+                <div id="quadrant-note" class="chart-note">--</div>
+            </div>
+
+            <!-- 30-Day Score History -->
+            <div class="card glass">
+                <h3>📈 30-Day Score History</h3>
+                <div class="chart-container" style="height:200px"><canvas id="chart-score-history"></canvas></div>
+            </div>
+
+            <!-- Fund Allocation -->
+            <div class="card glass calc-container">
+                <h3>💰 新資金配置決策模型</h3>
+                <div class="fund-input-group">新資金預算：<input type="number" id="fund-input" value="10000" oninput="updateAlloc()"> USD</div>
+                <div id="alloc-result-area"></div>
+                <div class="formula-box" id="formula-display"><b>配置摘要</b><br>完整雙軸計分規則已移到上方「雙軸評分框架」視窗。</div>
+            </div>
+
+            <!-- Portfolio Gap Analysis -->
+            <div class="card glass">
+                <h3>🎯 Portfolio Gap Analysis</h3>
+                <div class="portfolio-input-group">
+                    <label>Your Current Stock Allocation:</label>
+                    <div class="slider-row">
+                        <input type="range" id="portfolio-slider" min="0" max="100" value="60" oninput="updatePortfolioGap()">
+                        <span id="portfolio-pct" class="slider-val">60%</span>
+                    </div>
+                </div>
+                <div id="portfolio-gap-result" class="gap-result"></div>
+            </div>
+
+            <!-- What-If Scenario Sliders -->
+            <div class="card glass collapsible">
+                <h3 onclick="toggleCollapse(this)">🔮 What-If Scenario Sliders <span class="collapse-icon">▼</span></h3>
+                <div class="collapse-body">
+                    <div class="whatif-grid" id="whatif-grid"></div>
+                    <button class="btn-reset" onclick="resetWhatIf()">↻ Reset to Actual</button>
+                    <div id="whatif-result" class="whatif-result"></div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
             <div class="chart-grid">
-                <div class="card"><h3>📈 QQQ 走勢</h3><div class="chart-container"><canvas id="chart-qqq"></canvas></div></div>
-                <div class="card"><h3>📉 Shiller PE (均值/σ 視覺化)</h3><div class="chart-container"><canvas id="chart-pe"></canvas></div></div>
-                <div class="card"><h3>💎 SMH 半導體走勢</h3><div class="chart-container"><canvas id="chart-smh"></canvas></div></div>
-                <div class="card"><h3>😱 VIX 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-vix"></canvas></div></div>
-                <div class="card"><h3>💵 DXY 美元走勢</h3><div class="chart-container"><canvas id="chart-dxy"></canvas></div></div>
-                <div class="card"><h3>🏦 10Y Yield 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-tnx"></canvas></div></div>
-                <div class="card"><h3>🏗️ Copper 銅價走勢</h3><div class="chart-container"><canvas id="chart-hg"></canvas></div></div>
+                <div class="card glass"><h3>📈 QQQ 走勢</h3><div class="chart-container"><canvas id="chart-qqq"></canvas></div></div>
+                <div class="card glass"><h3>📉 Shiller PE (均值/σ)</h3><div class="chart-container"><canvas id="chart-pe"></canvas></div></div>
+                <div class="card glass"><h3>💎 SMH 半導體走勢</h3><div class="chart-container"><canvas id="chart-smh"></canvas></div></div>
+                <div class="card glass"><h3>😱 VIX 走勢 (含警戒線)</h3><div class="chart-container"><canvas id="chart-vix"></canvas></div></div>
+                <div class="card glass"><h3>💵 DXY 美元走勢（含 MA20）</h3><div class="chart-container"><canvas id="chart-dxy"></canvas></div></div>
+                <div class="card glass"><h3>🏦 10Y Yield（含 MA20 / 警戒線）</h3><div class="chart-container"><canvas id="chart-tnx"></canvas></div></div>
+                <div class="card glass"><h3>🏗️ Copper 銅價走勢（MA3）</h3><div class="chart-container"><canvas id="chart-hg"></canvas></div></div>
             </div>
         </div>
+
         <div class="right-column">
-            <div class="card">
+            <!-- Regime Change Log -->
+            <div class="card glass">
+                <h3>📋 Regime Change Log</h3>
+                <div id="regime-log" class="regime-log"><div class="empty-state">No regime changes recorded yet</div></div>
+            </div>
+
+            <!-- Signal Thresholds -->
+            <div class="card glass">
                 <h3>🚥 系統燈號與閾值定義</h3>
-                <div style="font-size:12px; line-height:1.8;">
-                    <b style="color:#4fc3f7">Shiller PE (AI 時代):</b><br>
-                    ✅ 合理: < 39.8 (+1σ)<br>
-                    ⚠️ 警戒: 39.8 ~ 44.1 (+2σ)<br>
-                    🚨 泡沫: > 44.1<br>
-                    <br>
-                    <b style="color:#4fc3f7">VIX 恐慌指數:</b><br>
-                    🟢 買點: > 25 (市場恐慌)<br>
-                    🟡 正常: 15 - 25<br>
-                    🔴 過熱: < 15 (極度樂觀)<br>
-                    <br>
-                    <b style="color:#4fc3f7">10Y Yield (債息):</b><br>
-                    🟢 利多: < 3.5%<br>
-                    🟡 中性: 3.5% - 4.5%<br>
-                    🔴 壓力: > 4.5%<br>
-                    <br>
-                    <b style="color:#4fc3f7">Fear & Greed (恐懼貪婪):</b><br>
-                    🟢 恐慌機會: < 30<br>
-                    🟡 正常運作: 30 - 70<br>
-                    🔴 貪婪警戒: > 70<br>
-                    <br>
-                    <b style="color:#4fc3f7">Credit Spread (信用利差):</b><br>
-                    🟢 安全: < 4%<br>
-                    🟡 警戒: 4% - 5%<br>
-                    🔴 危機: > 5% (歷史買點)<br>
-                    <br>
-                    <b style="color:#4fc3f7">Market Breadth (廣度):</b><br>
-                    🟢 機會: < 30% (超賣)<br>
-                    🟡 正常: 30% - 80%<br>
-                    🔴 擁擠: > 80% (過熱)
+                <div class="thresholds-box">
+                    <b style="color:var(--accent)">Shiller PE (AI 時代):</b><br>✅ 合理: < 39.8 (+1σ)<br>⚠️ 警戒: 39.8 ~ 44.1 (+2σ)<br>🚨 泡沫: > 44.1<br><br>
+                    <b style="color:var(--accent)">VIX 恐慌指數:</b><br>🟢 買點: > 25<br>🟡 正常: 15 - 25<br>🔴 過熱: < 15<br><br>
+                    <b style="color:var(--accent)">10Y Yield:</b><br>🟢 利多: < 3.5%<br>🟡 中性: 3.5% - 4.5%<br>🔴 壓力: > 4.5%<br><br>
+                    <b style="color:var(--accent)">Fear & Greed:</b><br>🟢 恐慌機會: < 30<br>🟡 正常: 30 - 70<br>🔴 貪婪警戒: > 70<br><br>
+                    <b style="color:var(--accent)">Credit Spread:</b><br>🟢 安全: < 4%<br>🟡 警戒: 4% - 5%<br>🔴 危機: > 5%<br><br>
+                    <b style="color:var(--accent)">Market Breadth:</b><br>🟢 機會: < 30%<br>🟡 正常: 30% - 80%<br>🔴 擁擠: > 80%
                 </div>
             </div>
-            <div class="card">
+
+            <!-- MTD Performance -->
+            <div class="card glass">
                 <h3>📅 本月 MTD 表現</h3>
-                <div id="mtd-box" style="font-size:13px;line-height:1.8">--</div>
+                <div id="mtd-box" class="mtd-box">--</div>
             </div>
-            <div class="card">
-                <h3>🧭 雙軸四象限（防守 / 進攻）</h3>
-                <div class="chart-container" style="height:240px"><canvas id="chart-quadrant"></canvas></div>
-                <div id="quadrant-note" style="font-size:12px;color:#bbb;margin-top:8px">--</div>
+
+            <!-- Backtesting -->
+            <div class="card glass">
+                <h3>📊 Backtesting (Illustrative)</h3>
+                <div class="chart-container" style="height:180px"><canvas id="chart-backtest"></canvas></div>
+                <div class="backtest-disclaimer">⚠️ Illustrative only. Past performance ≠ future results.</div>
             </div>
-            <div class="card">
+
+            <!-- Notification Setup -->
+            <div class="card glass">
+                <h3>🔔 Alert Setup</h3>
+                <div class="notif-box">
+                    <button class="btn-notif" id="btn-notif" onclick="requestNotif()">Enable Browser Notifications</button>
+                    <button class="btn-copy" onclick="copyAlertSummary()">📋 Copy Alert Summary</button>
+                </div>
+            </div>
+
+            <!-- Tech Revolution Reference -->
+            <div class="card glass">
                 <h3>📜 科技革命估值參考</h3>
-                <table>
-                    <thead><tr><th>時代</th><th>均值</th><th>標差</th></tr></thead>
-                    <tbody>
-                        <tr><td>工業時代</td><td>14.68</td><td>4.48</td></tr>
-                        <tr><td>網路時代</td><td>30.18</td><td>6.53</td></tr>
-                        <tr><td>行動雲端</td><td>24.84</td><td>4.98</td></tr>
-                        <tr style="background:rgba(79,195,247,0.1)"><td>AI 革命</td><td>35.55</td><td>4.27</td></tr>
-                    </tbody>
-                </table>
+                <table><thead><tr><th>時代</th><th>均值</th><th>標差</th></tr></thead>
+                <tbody>
+                    <tr><td>工業時代</td><td>14.68</td><td>4.48</td></tr>
+                    <tr><td>網路時代</td><td>30.18</td><td>6.53</td></tr>
+                    <tr><td>行動雲端</td><td>24.84</td><td>4.98</td></tr>
+                    <tr class="highlight-row"><td>AI 革命</td><td>35.55</td><td>4.27</td></tr>
+                </tbody></table>
             </div>
         </div>
     </div>
 </div>
-<script>
-    if (!Math.erf) { 
-        Math.erf = function(x) { 
-            const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911; 
-            const sign = x < 0 ? -1 : 1; 
-            x = Math.abs(x); 
-            const t = 1.0/(1.0 + p*x); 
-            const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x * x); 
-            return sign*y; 
-        }; 
-    }
-    const AI_MEAN = 35.55, AI_SD = 4.27;
-    let gData = null;
-    const isValidPayload = (d) => !!(d && d.qqq?.currentPrice && d.smh?.currentPrice && d.vix?.currentPrice && d.shiller?.current);
 
-    async function init() {
-        const bar = document.getElementById('status-bar');
-        try {
-            let dataSource = 'live API';
-            let res;
-            try {
-                res = await fetch('/api/data?t=' + Date.now());
-                if (!res.ok) throw new Error('live api failed');
-                const liveData = await res.json();
-                if (!isValidPayload(liveData)) throw new Error('live payload invalid');
-                gData = liveData;
-            } catch (_) {
-                dataSource = 'snapshot';
-                res = await fetch('./market-data-snapshot.json?t=' + Date.now());
-                if (!res.ok) throw new Error('無法載入 market-data-snapshot.json');
-                const snap = await res.json();
-                if (!isValidPayload(snap)) throw new Error('snapshot payload invalid');
-                gData = snap;
-            }
+<!-- Multi-Timeframe Toggle -->
+<div class="timeframe-toggle" id="timeframe-toggle">
+    <button class="tf-btn active" data-tf="daily" onclick="setTimeframe('daily',this)">Daily</button>
+    <button class="tf-btn" data-tf="weekly" onclick="setTimeframe('weekly',this)">Weekly</button>
+    <button class="tf-btn" data-tf="monthly" onclick="setTimeframe('monthly',this)">Monthly</button>
+</div>
 
-            bar.className = 'success';
-            const ts = gData.timestamp || gData.updatedAt || null;
-            const tsText = ts ? new Date(ts).toLocaleString() : new Date().toLocaleTimeString();
-            bar.innerText = `✅ 數據已載入（${dataSource}） ${tsText}`;
-            renderKPIs();
-            renderCharts();
-            updateAlloc();
-            renderMTD();
-        } catch (e) {
-            bar.className = 'error';
-            bar.innerText = '❌ 系統錯誤: ' + e.message;
-        }
-    }
-    function renderKPIs() {
-        const d = gData;
-        if (d.shiller) {
-            const z = (d.shiller.current - AI_MEAN) / AI_SD;
-            document.getElementById('v-pe').innerText = d.shiller.current.toFixed(2);
-            document.getElementById('s-pe').innerText = "Z: " + z.toFixed(2) + "σ";
-            document.getElementById('s-pe').className = 'kpi-status ' + (z > 1.5 ? 'down' : z > 0.8 ? 'neutral' : 'up');
-        }
-        if (d.spx) document.getElementById('v-spx').innerText = d.spx.currentPrice.toFixed(0);
-        if (d.ixic) document.getElementById('v-ixic').innerText = d.ixic.currentPrice.toFixed(0);
-        if (d.sox) document.getElementById('v-sox').innerText = d.sox.currentPrice.toFixed(0);
-        if (d.qqq) document.getElementById('v-qqq').innerText = '$' + d.qqq.currentPrice.toFixed(1);
-        if (d.smh) document.getElementById('v-smh').innerText = '$' + d.smh.currentPrice.toFixed(1);
-        if (d.boxx) document.getElementById('v-boxx').innerText = '$' + d.boxx.currentPrice.toFixed(1);
-        if (d.vix) {
-            const v = d.vix.currentPrice;
-            document.getElementById('v-vix').innerText = v.toFixed(1);
-            document.getElementById('s-vix').innerText = v > 25 ? '🟢 買點' : v < 15 ? '🔴 過熱' : '🟡 中性';
-            document.getElementById('s-vix').className = 'kpi-status ' + (v > 25 ? 'up' : v < 15 ? 'down' : 'neutral');
-        }
-        if (d.dxy) document.getElementById('v-dxy').innerText = d.dxy.currentPrice.toFixed(1);
-        if (d.tnx) {
-            const y = d.tnx.currentPrice;
-            document.getElementById('v-tnx').innerText = y.toFixed(2) + '%';
-            document.getElementById('s-tnx').innerText = y > 4.5 ? '🔴 壓力' : y < 3.5 ? '🟢 利多' : '🟡 中性';
-            document.getElementById('s-tnx').className = 'kpi-status ' + (y > 4.5 ? 'down' : y < 3.5 ? 'up' : 'neutral');
-        }
-        if (d.fearGreed) {
-            const fg = d.fearGreed.score;
-            document.getElementById('v-fg').innerText = fg;
-            document.getElementById('s-fg').innerText = fg > 70 ? '🔴 貪婪' : fg < 30 ? '🟢 恐慌' : '🟡 中性';
-            document.getElementById('s-fg').className = 'kpi-status ' + (fg > 70 ? 'down' : fg < 30 ? 'up' : 'neutral');
-        }
-        if (d.creditSpread) {
-            const cs = d.creditSpread.value;
-            document.getElementById('v-cs').innerText = cs.toFixed(2) + '%';
-            document.getElementById('s-cs').innerText = cs > 5.0 ? '🚨 高風險' : '✅ 正常';
-            document.getElementById('s-cs').className = 'kpi-status ' + (cs > 5.0 ? 'down' : 'up');
-        }
-        if (d.twd) document.getElementById('v-twd').innerText = d.twd.currentPrice.toFixed(2);
-        if (d.copper) {
-            const hg = d.copper.currentPrice;
-            document.getElementById('v-hg').innerText = '$' + hg.toFixed(2);
-            document.getElementById('s-hg').innerText = 'LME 銅價';
-        }
-    }
-    function renderCharts() {
-        const d = gData;
-        if (d.qqq) draw('chart-qqq', d.qqq, '#4fc3f7', 'QQQ', []);
-        if (d.shiller) {
-            const peData = { timestamps: d.shiller.history.map(h => new Date(h.date).getTime()), closes: d.shiller.history.map(h => h.value) };
-            draw('chart-pe', peData, '#ff9800', 'Shiller PE', [AI_MEAN, AI_MEAN + AI_SD, AI_MEAN + 2*AI_SD]);
-        }
-        if (d.smh) draw('chart-smh', d.smh, '#ce93d8', 'SMH', []);
-        if (d.vix) draw('chart-vix', d.vix, '#f44336', 'VIX', [25, 15]);
-        if (d.dxy) draw('chart-dxy', d.dxy, '#81c784', 'DXY', []);
-        if (d.tnx) draw('chart-tnx', d.tnx, '#ffd54f', 'Yield', [4.5, 3.5]);
-        if (d.copper) draw('chart-hg', d.copper, '#ff7043', 'Copper', []);
-    }
-    function draw(id, data, color, label, lines) {
-        if (!data || !data.timestamps) return;
-        const datasets = [{ label: label, data: data.closes, borderColor: color, borderWidth: 1.5, pointRadius: 0, fill: false }];
-        lines.forEach((val, idx) => {
-            datasets.push({ label: 'Ref', data: data.closes.map(() => val), borderColor: '#444', borderDash: [5,5], pointRadius: 0, fill: false, borderWidth: 1 });
-        });
-        new Chart(document.getElementById(id), {
-            type: 'line', data: { labels: data.timestamps.map(t => new Date(t)), datasets: datasets },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { type: 'time', ticks: { maxTicksLimit: 5 } } } }
-        });
-    }
-    function mtdOf(asset) {
-        if (!asset?.timestamps?.length || !asset?.closes?.length) return null;
-        const n = asset.timestamps.length;
-        const latest = asset.closes[n - 1];
-        const latestDate = new Date(asset.timestamps[n - 1]);
-        let first = null;
-        for (let i = 0; i < n; i++) {
-            const d = new Date(asset.timestamps[i]);
-            if (d.getMonth() === latestDate.getMonth() && d.getFullYear() === latestDate.getFullYear()) { first = asset.closes[i]; break; }
-        }
-        if (!first || !latest) return null;
-        return ((latest - first) / first) * 100;
-    }
-
-    function renderMTD() {
-        const items = ['qqq','smh','spy','boxx','qld'];
-        const html = items.map(k => {
-            const v = mtdOf(gData[k]);
-            const txt = v == null ? '--' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
-            return `<div>${k.toUpperCase()}: <b>${txt}</b></div>`;
-        }).join('');
-        document.getElementById('mtd-box').innerHTML = html;
-    }
-
-    let quadrantChart = null;
-    function renderQuadrant(trendScore, emotionScore) {
-        const note = document.getElementById('quadrant-note');
-        const mode = (trendScore >= 4 && emotionScore >= 2) ? '🟢 進攻區' :
-                     (trendScore < 4 && emotionScore >= 2) ? '🟡 逆向佈局區' :
-                     (trendScore >= 4 && emotionScore < 2) ? '🟠 趨勢續抱區' : '🔴 防守區';
-        note.innerText = `今日位置：${mode}（趨勢=${trendScore.toFixed(1)}, 情緒=${emotionScore}）`;
-
-        const ctx = document.getElementById('chart-quadrant');
-        if (!ctx) return;
-        if (quadrantChart) quadrantChart.destroy();
-        quadrantChart = new Chart(ctx, {
-            type: 'scatter',
-            data: { datasets: [{ label: 'Today', data: [{x: trendScore, y: emotionScore}], pointRadius: 8, pointBackgroundColor: '#4fc3f7' }] },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { min: 0, max: 8, title: { display: true, text: '趨勢軸' }, grid: { color: '#334' } },
-                    y: { min: -2, max: 10, title: { display: true, text: '情緒軸' }, grid: { color: '#334' } }
-                }
-            }
-        });
-    }
-
-    function updateAlloc() {
-        if (!gData || !gData.shiller || !gData.vix || !gData.tnx) return;
-        const fund = parseFloat(document.getElementById('fund-input').value) || 0;
-        const spx = gData.spx || gData.spy;
-
-        const trend = {
-            copper: (gData.copper?.currentPrice && gData.copper?.closes?.length >= 4) ? (gData.copper.currentPrice > (gData.copper.closes.slice(-4, -1).reduce((a,b)=>a+b,0)/3) ? 2 : 0) : 0,
-            tnx: (gData.tnx?.currentPrice && gData.tnx?.closes?.length >= 20) ? (gData.tnx.currentPrice < (gData.tnx.closes.slice(-20).reduce((a,b)=>a+b,0)/20) ? 2 : 0) : 0,
-            dxy: (gData.dxy?.currentPrice && gData.dxy?.closes?.length >= 20) ? (gData.dxy.currentPrice < (gData.dxy.closes.slice(-20).reduce((a,b)=>a+b,0)/20) ? 2 : 0) : 0,
-            breadth: gData.breadth?.value > 70 ? 2 : gData.breadth?.value > 50 ? 1 : 0
-        };
-        let K = 1.0;
-        if (spx?.currentPrice && spx?.closes?.length >= 200) {
-            const ma200 = spx.closes.slice(-200).reduce((a,b)=>a+b,0)/200;
-            const dd = (spx.currentPrice - ma200) / ma200;
-            if (dd < -0.15) K = 0.5; else if (dd < -0.05) K = 0.6; else if (dd < 0) K = 0.8;
-        }
-        const trendScore = (trend.copper + trend.tnx + trend.dxy + trend.breadth) * K;
-
-        const vix = gData.vix.currentPrice;
-        const fg = gData.fearGreed?.score ?? 50;
-        const oas = (gData.creditSpread?.value || 3) * 100;
-        const emoVix = vix > 35 ? 3 : vix > 28 ? 2 : vix > 20 ? 1 : vix > 15 ? 0 : -1;
-        const emoFg = fg < 20 ? 3 : fg < 40 ? 2 : fg < 60 ? 1 : fg < 75 ? 0 : -1;
-        const emoOas = oas > 600 ? 3 : oas > 500 ? 2 : oas > 400 ? 1 : oas > 300 ? 0 : -1;
-        const emotionScore = emoVix + emoFg + emoOas;
-
-        const pe = gData.shiller.current;
-        const rawStock = Math.min(70, Math.max(20, Math.round(20 + trendScore * 5 + emotionScore * 4)));
-        let stockCap = 100;
-        if (pe > 39.33) stockCap = 55; else if (pe >= 36) stockCap = 65;
-        let stockTarget = Math.min(rawStock, stockCap, 70);
-
-        const qld = Math.round(Math.max(0, (stockTarget - 40) * 0.35));
-        const qqq = Math.round(stockTarget - qld);
-        const cash = Math.max(0, 100 - qld - qqq);
-
-        document.getElementById('alloc-result-area').innerHTML =
-            `<div style="text-align:center; margin-bottom:10px;">趨勢軸 <b>${trendScore.toFixed(1)}</b> ｜ 情緒軸 <b>${emotionScore}</b> ｜ 股票目標 <b style="color:#4fc3f7;font-size:26px;">${stockTarget}%</b></div>` +
-            `<div style="text-align:center; margin-bottom:10px; font-size:12px; color:#bbb;">PE護欄上限: ${stockCap === 100 ? '無上限' : stockCap + '%' }（上線設定 70%）</div>` +
-            '<div class="alloc-bar">' +
-            `<div class="alloc-item" style="width:${qld}%; background:#f44336">QLD ${qld}%</div>` +
-            `<div class="alloc-item" style="width:${qqq}%; background:#4fc3f7">QQQ ${qqq}%</div>` +
-            `<div class="alloc-item" style="width:${cash}%; background:#4caf50">現金 ${cash}%</div>` +
-            '</div>' +
-            '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; text-align:center; font-size:14px;">' +
-            `<div>QLD: <b>$${(fund*qld/100).toLocaleString()}</b></div>` +
-            `<div>QQQ: <b>$${(fund*qqq/100).toLocaleString()}</b></div>` +
-            `<div>現金: <b>$${(fund*cash/100).toLocaleString()}</b></div>` +
-            '</div>';
-
-        renderQuadrant(trendScore, emotionScore);
-    }
-    init();
-</script>
+<script src="dashboard-core.js"></script>
+<script src="dashboard-ui.js"></script>
 </body>
 </html>
