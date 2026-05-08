@@ -2,8 +2,26 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const PORT = 8899;
+const SNAPSHOT_PATH = path.join(__dirname, 'docs', 'market-data-snapshot.json');
+let lastGoodCreditSpread = null;
+
+try {
+  if (fs.existsSync(SNAPSHOT_PATH)) {
+    const snap = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));
+    if (Number.isFinite(snap?.creditSpread?.value)) {
+      lastGoodCreditSpread = {
+        value: snap.creditSpread.value,
+        symbol: snap.creditSpread.symbol || 'BAMLH0A0HYM2',
+        asOf: snap.creditSpread.asOf || null,
+        source: snap.creditSpread.source || 'snapshot-cache',
+        stale: true
+      };
+    }
+  }
+} catch {}
 
 function fetchURL(url, timeoutMs = 12000) {
   return new Promise((resolve, reject) => {
@@ -72,17 +90,64 @@ async function fetchFearGreed() {
 async function fetchCreditSpread() {
   const urls = [
     'https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2',
+    'https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2&cosd=2020-01-01',
     'https://fred.stlouisfed.org/series/BAMLH0A0HYM2/downloaddata/BAMLH0A0HYM2.csv'
   ];
+  const parseCsv = (csv) => {
+    const lines = csv.split(/\r?\n/).filter(Boolean);
+    for (let i = lines.length - 1; i >= 1; i--) {
+      const parts = lines[i].split(',').map(s => s.replace(/"/g, '').trim());
+      if (parts.length < 2) continue;
+      const maybeDate = parts[0];
+      const maybeValue = parts[1];
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(maybeDate)) continue;
+      const v = Number.parseFloat(maybeValue);
+      if (Number.isFinite(v)) return { value: v, asOf: maybeDate };
+    }
+    return null;
+  };
+
   for (const u of urls) {
     try {
-      const csv = await fetchURL(u, 10000);
-      const lines = csv.trim().split('\n').slice(1).reverse();
-      for (const line of lines) {
-        const v = parseFloat((line.split(',')[1] || '').replace(/"/g, ''));
-        if (!Number.isNaN(v)) return { value: v, symbol: 'BAMLH0A0HYM2' };
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const csv = await fetchURL(u, 12000);
+        const parsed = parseCsv(csv);
+        if (parsed) {
+          const result = {
+            value: parsed.value,
+            asOf: parsed.asOf,
+            symbol: 'BAMLH0A0HYM2',
+            source: 'FRED:fredgraph.csv',
+            stale: false
+          };
+          lastGoodCreditSpread = result;
+          return result;
+        }
       }
     } catch {}
+  }
+
+  // Shell curl fallback (more resilient on some TLS/CDN paths in Node runtime)
+  for (const u of urls) {
+    try {
+      const csv = execFileSync('curl', ['-LfsS', '--max-time', '20', u], { encoding: 'utf8' });
+      const parsed = parseCsv(csv);
+      if (parsed) {
+        const result = {
+          value: parsed.value,
+          asOf: parsed.asOf,
+          symbol: 'BAMLH0A0HYM2',
+          source: 'FRED:curl-fallback',
+          stale: false
+        };
+        lastGoodCreditSpread = result;
+        return result;
+      }
+    } catch {}
+  }
+
+  if (lastGoodCreditSpread?.value != null) {
+    return { ...lastGoodCreditSpread, stale: true, source: 'cache:lastGoodCreditSpread' };
   }
   return null;
 }
