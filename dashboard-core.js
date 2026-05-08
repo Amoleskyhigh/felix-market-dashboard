@@ -32,7 +32,12 @@ const KPI_DEFS=[
     {id:'cs',label:'Credit Spread',get:d=>d.creditSpread?.value,fmt:v=>v.toFixed(2)+'%',polarity:false,
      status:v=>({text:v>5?'🚨 高風險':'✅ 正常',cls:v>5?'down':'up'}),
      thresh:[{val:5,label:'🚨危機',dir:'above'}]},
-    {id:'oas',label:'HY OAS (bp)',get:d=>d.creditSpread?.value?d.creditSpread.value*100:null,fmt:v=>Math.round(v)+' bp',polarity:false,
+    {id:'oas',label:'HY OAS (bp)',get:d=>{
+        if(Number.isFinite(d?.creditSpread?.value)) return d.creditSpread.value*100;
+        if(Number.isFinite(d?.creditSpread?.current)) return d.creditSpread.current*100;
+        if(Number.isFinite(d?.hyOasBp)) return d.hyOasBp;
+        return null;
+    },fmt:v=>Math.round(v)+' bp',polarity:false,showWhenMissing:true,
      status:v=>({text:v>600?'🚨 極端恐慌':v>500?'🔴 高壓':v>400?'🟡 警戒':v>300?'🟢 中性':'✅ 低風險',cls:v>500?'down':v>400?'neutral':'up'}),
      thresh:[{val:400,label:'🟡警戒',dir:'above'},{val:600,label:'🚨極端',dir:'above'}]},
     {id:'br',label:'市場廣度 (>200MA)',get:d=>d.breadth?.value,fmt:v=>v.toFixed(1)+'%',polarity:true,
@@ -69,9 +74,15 @@ async function init(){
 function renderKPIs(){
     const row=document.getElementById('kpi-row');row.innerHTML='';
     KPI_DEFS.forEach((def,i)=>{
-        const val=def.get(gData);if(val==null)return;
+        const val=def.get(gData);
+        if(val==null && !def.showWhenMissing) return;
         const card=document.createElement('div');card.className='kpi-card';card.style.animationDelay=(i*0.05)+'s';
-        let html=`<div class="kpi-label">${def.label}</div><div class="kpi-value">${def.fmt(val)}</div>`;
+        let html=`<div class="kpi-label">${def.label}</div><div class="kpi-value">${val==null?'--':def.fmt(val)}</div>`;
+        if(val==null){
+            html+=`<div class="kpi-status neutral">資料暫缺</div>`;
+            card.innerHTML=html;row.appendChild(card);
+            return;
+        }
         // Status
         if(def.status){const s=def.status(val);html+=`<div class="kpi-status ${s.cls}">${s.text}</div>`;}
         // Delta badge
