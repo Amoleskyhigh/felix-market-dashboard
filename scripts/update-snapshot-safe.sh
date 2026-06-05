@@ -5,8 +5,9 @@ TMP="/tmp/market-snapshot-$$.json"
 OUT="docs/market-data-snapshot.json"
 
 CURL_URL="http://127.0.0.1:8899/api/data"
-if ! curl -fsS --retry 2 --retry-delay 2 --retry-connrefused --max-time 80 "$CURL_URL" > "$TMP"; then
+if ! curl -fsS --connect-timeout 5 --retry 1 --retry-delay 1 --retry-connrefused --max-time 25 "$CURL_URL" > "$TMP"; then
   code=$?
+  [ "$code" -eq 0 ] && code=1
   echo "ERROR: fetch api failed (code=$code, url=$CURL_URL)"
   exit $code
 fi

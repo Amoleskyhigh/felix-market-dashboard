@@ -7,6 +7,9 @@ const { execFileSync } = require('child_process');
 const PORT = 8899;
 const SNAPSHOT_PATH = path.join(__dirname, 'docs', 'market-data-snapshot.json');
 let lastGoodCreditSpread = null;
+let lastPayloadCache = null;
+
+const API_BUDGET_MS = 9000;
 
 try {
   if (fs.existsSync(SNAPSHOT_PATH)) {
@@ -109,8 +112,29 @@ async function fetchCreditSpread() {
 
   for (const u of urls) {
     try {
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const csv = await fetchURL(u, 12000);
+      const csv = execFileSync('curl', ['-LfsS', '--max-time', '12', u], {
+        encoding: 'utf8',
+        timeout: 15000
+      });
+      const parsed = parseCsv(csv);
+      if (parsed) {
+        const result = {
+          value: parsed.value,
+          asOf: parsed.asOf,
+          symbol: 'BAMLH0A0HYM2',
+          source: 'FRED:curl-fallback',
+          stale: false
+        };
+        lastGoodCreditSpread = result;
+        return result;
+      }
+    } catch {}
+  }
+
+  for (const u of urls) {
+    try {
+      for (let attempt = 0; attempt < 1; attempt++) {
+        const csv = await fetchURL(u, 4500);
         const parsed = parseCsv(csv);
         if (parsed) {
           const result = {
@@ -127,29 +151,24 @@ async function fetchCreditSpread() {
     } catch {}
   }
 
-  // Shell curl fallback (more resilient on some TLS/CDN paths in Node runtime)
-  for (const u of urls) {
-    try {
-      const csv = execFileSync('curl', ['-LfsS', '--max-time', '20', u], { encoding: 'utf8' });
-      const parsed = parseCsv(csv);
-      if (parsed) {
-        const result = {
-          value: parsed.value,
-          asOf: parsed.asOf,
-          symbol: 'BAMLH0A0HYM2',
-          source: 'FRED:curl-fallback',
-          stale: false
-        };
-        lastGoodCreditSpread = result;
-        return result;
-      }
-    } catch {}
-  }
-
   if (lastGoodCreditSpread?.value != null) {
     return { ...lastGoodCreditSpread, stale: true, source: 'cache:lastGoodCreditSpread' };
   }
   return null;
+}
+
+function loadSnapshotFallback() {
+  try {
+    if (!fs.existsSync(SNAPSHOT_PATH)) return null;
+    const snap = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf8'));
+    return { ...snap, stale: true, source: 'snapshot-fallback' };
+  } catch {
+    return null;
+  }
+}
+
+function getCachedFallback() {
+  return lastPayloadCache || loadSnapshotFallback() || { timestamp: Date.now(), stale: true, source: 'empty-fallback' };
 }
 
 async function fetchMarketBreadth() {
@@ -209,7 +228,9 @@ async function getAllData() {
     fetchYahooChart('HG=F'), fetchMarketBreadth()
   ]);
 
-  return { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, usdtwd, twd: usdtwd, dxy, tnx, shiller, fearGreed, creditSpread, copper, breadth, timestamp: Date.now() };
+  const payload = { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, usdtwd, twd: usdtwd, dxy, tnx, shiller, fearGreed, creditSpread, copper, breadth, timestamp: Date.now() };
+  if (isHealthyPayload(payload)) lastPayloadCache = payload;
+  return payload;
 }
 
 function isHealthyPayload(d) {
@@ -217,32 +238,41 @@ function isHealthyPayload(d) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const urlPath = req.url.split('?')[0];
-  if (urlPath === '/api/data') {
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-    const data = await getAllData();
-    res.end(JSON.stringify(data));
-    return;
-  }
-  if (urlPath === '/api/health') {
-    const data = await getAllData();
-    const ok = isHealthyPayload(data);
-    res.writeHead(ok ? 200 : 503, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok, timestamp: Date.now() }));
-    return;
-  }
-
-  let filePath = req.url === '/' ? '/market-dashboard.html' : req.url;
-  filePath = path.join(__dirname, filePath);
-  const ext = path.extname(filePath);
-  const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
   try {
-    const content = fs.readFileSync(filePath);
-    res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
-    res.end(content);
-  } catch {
-    res.writeHead(404);
-    res.end('Not found');
+    const urlPath = req.url.split('?')[0];
+    if (urlPath === '/api/data') {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      const data = await Promise.race([
+        getAllData(),
+        new Promise((resolve) => setTimeout(() => resolve(getCachedFallback()), API_BUDGET_MS))
+      ]);
+      res.end(JSON.stringify(data));
+      return;
+    }
+    if (urlPath === '/api/health') {
+      const cached = getCachedFallback();
+      const ageMs = Date.now() - (cached?.timestamp || 0);
+      const ok = isHealthyPayload(cached);
+      res.writeHead(ok ? 200 : 503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok, timestamp: Date.now(), ageMs, stale: ageMs > API_BUDGET_MS, source: cached?.source || 'live-cache' }));
+      return;
+    }
+
+    let filePath = req.url === '/' ? '/market-dashboard.html' : req.url;
+    filePath = path.join(__dirname, filePath);
+    const ext = path.extname(filePath);
+    const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+    try {
+      const content = fs.readFileSync(filePath);
+      res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
+      res.end(content);
+    } catch {
+      res.writeHead(404);
+      res.end('Not found');
+    }
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: false, error: String(err && err.message ? err.message : err) }));
   }
 });
 
