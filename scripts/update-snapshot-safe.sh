@@ -22,7 +22,11 @@ import json,sys,time,os
 p=sys.argv[1]
 out=sys.argv[2]
 d=json.load(open(p))
-prev = json.load(open(out)) if os.path.exists(out) else {}
+try:
+    prev = json.load(open(out)) if os.path.exists(out) else {}
+except Exception as exc:
+    print(f"WARN: previous snapshot unreadable ({exc}); ignoring previous snapshot")
+    prev = {}
 missing=[]
 
 # allow carrying forward slowly-updated series (credit spread) from previous snapshot
