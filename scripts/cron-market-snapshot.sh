@@ -6,6 +6,7 @@ REPO_STATUS="failed"
 DATA_STATUS="Error [unknown]"
 MISSING_FIELDS="[]"
 SNAPSHOT_FILE="docs/market-data-snapshot.json"
+ROOT_SNAPSHOT_FILE="market-data-snapshot.json"
 LATEST_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 TMP_LOG="/tmp/cron-market-snapshot-$$.log"
 STARTED_SERVER=0
@@ -29,6 +30,7 @@ fi
 
 if run_cmd bash scripts/check-server-safe.sh 8899; then
   if run_cmd bash scripts/update-snapshot-safe.sh; then
+    run_cmd cp "$SNAPSHOT_FILE" "$ROOT_SNAPSHOT_FILE"
     DATA_STATUS="Success"
   else
     DATA_STATUS="Error [scripts/update-snapshot-safe.sh failed]"
@@ -49,8 +51,8 @@ else
   MISSING_FIELDS="$(grep 'MISSING_OR_STALE:' "$TMP_LOG" | tail -n1 | sed 's/^MISSING_OR_STALE:[[:space:]]*/[/' | sed 's/$/]/')"
 fi
 
-if ! git diff --quiet -- "$SNAPSHOT_FILE" 2>/dev/null; then
-  if run_cmd git add "$SNAPSHOT_FILE" \
+if ! git diff --quiet -- "$SNAPSHOT_FILE" "$ROOT_SNAPSHOT_FILE" 2>/dev/null; then
+  if run_cmd git add "$SNAPSHOT_FILE" "$ROOT_SNAPSHOT_FILE" \
     && run_cmd git commit -m "chore: update market snapshot (cron, QA-gated)" \
     && run_cmd git push; then
     REPO_STATUS="updated and pushed"
