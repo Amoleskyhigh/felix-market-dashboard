@@ -30,10 +30,41 @@ print(f"json ok: {path}")
 PY
 }
 
-if run_cmd git pull --rebase --autostash; then
+preserve_untracked_pull_blockers() {
+  python3 - <<'PY' >>"$TMP_LOG" 2>&1
+import pathlib
+import shutil
+import subprocess
+import time
+
+incoming = set(
+    subprocess.check_output(["git", "diff", "--name-only", "HEAD..origin/main"], text=True).splitlines()
+)
+untracked = set(
+    subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard"], text=True).splitlines()
+)
+blockers = sorted(path for path in untracked & incoming if path)
+if not blockers:
+    print("untracked pull blockers: none")
+    raise SystemExit(0)
+
+backup_root = pathlib.Path("/tmp/cron-market-snapshot-untracked-backups") / time.strftime("%Y%m%d-%H%M%S")
+for rel in blockers:
+    src = pathlib.Path(rel)
+    if not src.exists():
+        continue
+    dst = backup_root / rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(dst))
+print("preserved untracked pull blockers:", ", ".join(blockers))
+print("backup dir:", backup_root)
+PY
+}
+
+if run_cmd git fetch --prune origin main && preserve_untracked_pull_blockers && run_cmd git pull --rebase --autostash; then
   :
 else
-  DATA_STATUS="Error [git pull --rebase --autostash failed]"
+  DATA_STATUS="Error [git fetch/preserve/pull failed]"
   READY_TO_UPDATE=0
 fi
 
