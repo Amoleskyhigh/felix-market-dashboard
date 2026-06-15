@@ -32,6 +32,6 @@
 
 ## 一致性規則
 
-1. 日報腳本優先讀取 `market-dashboard/docs/market-data-snapshot.json`。
+1. 日報腳本優先讀取 `felix-market-dashboard/docs/market-data-snapshot.json`。
 2. 若快照缺核心欄位，日報可 fallback 外部抓取，並在日誌標記。
 3. 不允許網頁和日報使用不同口徑同名指標。
