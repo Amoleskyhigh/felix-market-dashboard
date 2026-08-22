@@ -11,6 +11,11 @@ LATEST_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 TMP_LOG="/tmp/cron-market-snapshot-$$.log"
 STARTED_SERVER=0
 READY_TO_UPDATE=1
+NODE_BIN="${NODE_BIN:-/opt/homebrew/opt/node@24/bin/node}"
+
+if [ ! -x "$NODE_BIN" ]; then
+  NODE_BIN="$(command -v node 2>/dev/null || true)"
+fi
 
 run_cmd() {
   "$@" >>"$TMP_LOG" 2>&1
@@ -76,7 +81,7 @@ fi
 
 if [ "$READY_TO_UPDATE" -eq 1 ]; then
   if ! run_cmd bash scripts/check-server-safe.sh 8899; then
-    if run_cmd nohup node market-server.js >/tmp/market-server.log 2>&1 & then
+    if run_cmd nohup "$NODE_BIN" market-server.js >/tmp/market-server.log 2>&1 & then
       STARTED_SERVER=1
       sleep 3
     fi
@@ -100,7 +105,7 @@ if [ "$READY_TO_UPDATE" -eq 1 ]; then
 fi
 
 if [ -f "$SNAPSHOT_FILE" ]; then
-  SNAPSHOT_TIMESTAMP="$(node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));const t=d.timestamp;console.log(Number.isFinite(t)?new Date(t).toISOString():'N/A');" "$SNAPSHOT_FILE" 2>/dev/null || echo N/A)"
+  SNAPSHOT_TIMESTAMP="$("$NODE_BIN" -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));const t=d.timestamp;console.log(Number.isFinite(t)?new Date(t).toISOString():'N/A');" "$SNAPSHOT_FILE" 2>/dev/null || echo N/A)"
 else
   SNAPSHOT_TIMESTAMP="N/A"
 fi
