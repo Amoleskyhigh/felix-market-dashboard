@@ -1,0 +1,42 @@
+name: Update ETF forward P/E history (post-market daily)
+
+on:
+  schedule:
+    - cron: '35 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-forward-pe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate forward P/E history
+        env:
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+        run: node scripts/update-forward-pe-history.js
+
+      - name: Validate history
+        run: |
+          node -e "const fs=require('fs'); for(const file of ['forward-pe-history.json','docs/forward-pe-history.json']) { const d=JSON.parse(fs.readFileSync(file,'utf8')); if(!Array.isArray(d.snapshots)||!d.snapshots.length) throw new Error(file+' has no snapshots'); for(const p of d.snapshots) for(const s of ['SPY','QQQ','SMH','IGV']) { const e=p.etfs?.[s]; if(!e||!['available','partial','unavailable'].includes(e.status)) throw new Error(file+' invalid '+s); if(!e.asOf||!e.retrievedAt||!e.sources?.holdings||!e.sources?.constituentForwardPE) throw new Error(file+' missing source/date '+s); if(e.status==='unavailable'&&e.value!==null) throw new Error(file+' unavailable has value '+s); if(e.status!=='unavailable'&&!Number.isFinite(e.value)) throw new Error(file+' numeric status missing value '+s); } } console.log('forward P/E history ok')"
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet forward-pe-history.json docs/forward-pe-history.json; then
+            echo "No forward P/E changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add forward-pe-history.json docs/forward-pe-history.json
+          git commit -m "chore: update ETF forward P/E history"
+          git push

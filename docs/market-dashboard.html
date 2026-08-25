@@ -6,8 +6,8 @@
     <title>股市研究儀表板 — Enhanced V2</title>
     <meta name="description" content="Enhanced Market Research Dashboard with daily decision engine, action signals, and advanced analytics.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <link rel="stylesheet" href="dashboard-styles.css">
 </head>
 <body>
@@ -92,6 +92,16 @@
             <div class="card glass">
                 <h3>📈 30-Day Score History</h3>
                 <div class="chart-container" style="height:200px"><canvas id="chart-score-history"></canvas></div>
+            </div>
+
+            <!-- ETF Forward P/E History (inline SVG: no chart CDN dependency) -->
+            <div class="card glass forward-pe-card">
+                <h3>🔭 SPY / QQQ / SMH / IGV Forward P/E</h3>
+                <div id="forward-pe-status" class="forward-pe-status">⏳ 載入每日估值快照…</div>
+                <div id="forward-pe-latest" class="forward-pe-latest"></div>
+                <svg id="chart-forward-pe" class="forward-pe-chart" viewBox="0 0 680 250" role="img" aria-label="SPY、QQQ、SMH、IGV forward P/E 每日趨勢圖"></svg>
+                <div id="forward-pe-meta" class="forward-pe-meta">來源與資料日期載入中…</div>
+                <div class="forward-pe-note">持股加權 analyst-consensus forward P/E（正值採調和平均）。只讀取 <code>forwardPE</code>，絕不以 trailing P/E 代替；覆蓋率以完整 ETF 持股權重計算，低於 40% 顯示 N/A。</div>
             </div>
 
             <!-- Fund Allocation -->

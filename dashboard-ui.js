@@ -1,5 +1,68 @@
 /* ===== Enhanced Market Dashboard V2 — UI & Features ===== */
 
+let forwardPEHistory=null;
+
+function forwardPEValue(point){return Number.isFinite(point?.value)?point.value:null;}
+function forwardPECoverage(point){return Number.isFinite(point?.coverage)?Math.round(point.coverage*100)+'%':'—';}
+function forwardPEAsOf(point,latest){return point?.asOf||latest?.asOf||latest?.date||'—';}
+function forwardPESource(history,latest){return latest?.sources?.constituentForwardPE||history?.sources?.constituentForwardPE||'來源未提供';}
+
+async function loadForwardPEPanel(){
+    const status=document.getElementById('forward-pe-status');
+    if(!status)return;
+    const sources=['./forward-pe-history.json?t='+Date.now(),'https://amoleskyhigh.github.io/felix-market-dashboard/forward-pe-history.json?t='+Date.now()];
+    try{
+        let data=null;
+        for(const source of sources){
+            try{const res=await fetch(source);if(!res.ok)throw new Error(String(res.status));const candidate=await res.json();if(!Array.isArray(candidate?.snapshots))throw new Error('invalid history');data=candidate;break;}catch{}
+        }
+        if(!data)throw new Error('尚未建立快照');
+        forwardPEHistory=data;
+        renderForwardPEPanel();
+    }catch(error){
+        status.className='forward-pe-status pending';
+        status.textContent='ℹ️ 尚未建立 forward P/E 快照；資料將自首次成功的盤後更新日起累積。';
+        document.getElementById('forward-pe-latest').innerHTML='';
+        document.getElementById('chart-forward-pe').innerHTML='';
+    }
+}
+
+function renderForwardPEPanel(){
+    const history=forwardPEHistory;
+    const status=document.getElementById('forward-pe-status');
+    const latest=history?.snapshots?.[history.snapshots.length-1];
+    if(!latest){status.className='forward-pe-status pending';status.textContent='ℹ️ 尚無快照；資料將從成功更新日開始累積。';return;}
+    const symbols=['SPY','QQQ','SMH','IGV'];
+    const values=symbols.map(symbol=>latest.etfs?.[symbol]||{});
+    const hasPartial=values.some(point=>point.status==='partial');
+    const hasUnavailable=values.some(point=>point.status==='unavailable'||forwardPEValue(point)==null);
+    status.className='forward-pe-status '+(hasUnavailable?'pending':hasPartial?'partial':'available');
+    status.textContent=`${hasUnavailable?'⚠️':'✅'} 資料日期：${latest.asOf||latest.date} ｜ ${history.snapshots.length} 個觀測日 ｜ 起始日 ${history.startedAt||history.snapshots[0].date}${hasPartial?' ｜ 部分基金覆蓋率低於 80%':''}${hasUnavailable?' ｜ 不足 40% 顯示 N/A':''}`;
+    const colors={SPY:'#4fc3f7',QQQ:'#ab8cff',SMH:'#ffb74d',IGV:'#66d9a6'};
+    const container=document.getElementById('forward-pe-latest');
+    container.innerHTML=symbols.map((symbol,index)=>{const point=values[index],value=forwardPEValue(point)==null?'N/A':forwardPEValue(point).toFixed(2)+'x',coverage=forwardPECoverage(point),label=point.status==='available'?'覆蓋足夠':point.status==='partial'?'部分':'暫缺',error=point.error?` · ${point.error}`:'';return `<div class="forward-pe-metric" title="資料日期 ${forwardPEAsOf(point,latest)}；${error||'Forward P/E'}"><span class="forward-pe-dot" style="background:${colors[symbol]}"></span><b>${symbol}</b><strong>${value}</strong><small>${label} · 覆蓋 ${coverage} · ${forwardPEAsOf(point,latest)}</small></div>`;}).join('');
+    const meta=document.getElementById('forward-pe-meta');
+    if(meta)meta.textContent=`來源：${forwardPESource(history,latest)} ｜ 持股：${latest?.etfs?.SPY?.sources?.holdings||history?.sources?.holdings||'來源未提供'} ｜ 擷取時間：${latest.retrievedAt?new Date(latest.retrievedAt).toLocaleString():'—'}。`;
+    drawForwardPEChart(history.snapshots,symbols,colors);
+}
+
+function drawForwardPEChart(points,symbols,colors){
+    const svg=document.getElementById('chart-forward-pe');if(!svg)return;
+    const ns='http://www.w3.org/2000/svg',width=680,height=250,left=48,right=18,top=24,bottom=38;
+    const all=points.flatMap(point=>symbols.map(symbol=>forwardPEValue(point.etfs?.[symbol]))).filter(Number.isFinite);
+    if(!all.length){svg.innerHTML='';return;}
+    const min=Math.max(0,Math.floor((Math.min(...all)-2)/5)*5),max=Math.ceil((Math.max(...all)+2)/5)*5,range=Math.max(1,max-min);
+    const x=index=>left+(points.length===1?(width-left-right)/2:index*(width-left-right)/(points.length-1));
+    const y=value=>top+(max-value)*(height-top-bottom)/range;
+    svg.innerHTML='';
+    const add=(tag,attrs,text)=>{const node=document.createElementNS(ns,tag);Object.entries(attrs||{}).forEach(([key,value])=>node.setAttribute(key,value));if(text!=null)node.textContent=text;svg.appendChild(node);return node;};
+    for(let i=0;i<=4;i++){const value=min+(range*i/4),py=y(value);add('line',{x1:left,y1:py,x2:width-right,y2:py,stroke:'rgba(255,255,255,.12)','stroke-width':'1'});add('text',{x:left-8,y:py+4,fill:'#7a8ba8','font-size':'11','text-anchor':'end'},value.toFixed(0)+'x');}
+    const labels=[0,Math.floor((points.length-1)/2),points.length-1];
+    [...new Set(labels)].forEach(index=>add('text',{x:x(index),y:height-12,fill:'#7a8ba8','font-size':'11','text-anchor':'middle'},points[index].date.slice(5)));
+    symbols.forEach(symbol=>{let d='',started=false;points.forEach((point,index)=>{const value=forwardPEValue(point.etfs?.[symbol]);if(value==null){started=false;return;}const command=started?'L':'M';d+=`${command}${x(index).toFixed(1)},${y(value).toFixed(1)} `;started=true;});if(d)add('path',{d,fill:'none',stroke:colors[symbol],'stroke-width':'2.5','stroke-linejoin':'round','stroke-linecap':'round'});points.forEach((point,index)=>{const value=forwardPEValue(point.etfs?.[symbol]);if(value!=null)add('circle',{cx:x(index),cy:y(value),r:3.5,fill:colors[symbol],stroke:'#101827','stroke-width':'1.5'});});});
+    symbols.forEach((symbol,index)=>{const lx=left+index*88;add('circle',{cx:lx,cy:11,r:4,fill:colors[symbol]});add('text',{x:lx+8,y:15,fill:'#e0e6f0','font-size':'11'},symbol);});
+}
+
 // ===== UPDATE ALLOC (main render) =====
 function updateAlloc(){
     const sc=computeScores();if(!sc)return;
@@ -175,7 +238,13 @@ function renderScoreHistory(){
 function updatePortfolioGap(){
     const slider=document.getElementById('portfolio-slider');if(!slider)return;
     const cur=parseInt(slider.value);document.getElementById('portfolio-pct').textContent=cur+'%';
-    const sc=computeScores();if(!sc)return;
+    const sc=computeScores();
+    if(!sc){
+        document.getElementById('portfolio-gap-result').innerHTML=
+            `<div style="font-weight:600;margin-bottom:8px">⏳ 等待市場資料載入</div>`+
+            `<div style="font-size:12px;color:var(--text-dim)">資料就緒後會自動恢復目標配置比較。</div>`;
+        return;
+    }
     const target=sc.stockTarget;const gap=cur-target;
     const zone=quadrantZone(sc.trendScore,sc.emotionScore);
     let advice='',cls='';
@@ -194,10 +263,10 @@ function updatePortfolioGap(){
 function initWhatIf(){
     const grid=document.getElementById('whatif-grid');
     const items=[
-        {id:'wi-vix',label:'VIX',min:8,max:60,step:0.5,val:gData.vix?.currentPrice||20},
-        {id:'wi-fg',label:'Fear/Greed',min:0,max:100,step:1,val:gData.fearGreed?.score||50},
-        {id:'wi-tnx',label:'10Y Yield %',min:1,max:7,step:0.05,val:gData.tnx?.currentPrice||4},
-        {id:'wi-breadth',label:'Breadth %',min:0,max:100,step:1,val:gData.breadth?.value||50},
+        {id:'wi-vix',label:'VIX',min:8,max:60,step:0.5,val:gData?.vix?.currentPrice||20},
+        {id:'wi-fg',label:'Fear/Greed',min:0,max:100,step:1,val:gData?.fearGreed?.score||50},
+        {id:'wi-tnx',label:'10Y Yield %',min:1,max:7,step:0.05,val:gData?.tnx?.currentPrice||4},
+        {id:'wi-breadth',label:'Breadth %',min:0,max:100,step:1,val:gData?.breadth?.value||50},
     ];
     grid.innerHTML=items.map(i=>`<div class="whatif-item"><label>${i.label}: <span class="wi-val" id="${i.id}-val">${i.val}</span></label><input type="range" id="${i.id}" min="${i.min}" max="${i.max}" step="${i.step}" value="${i.val}" oninput="onWhatIf()"></div>`).join('');
 }
@@ -205,7 +274,7 @@ function onWhatIf(){
     ['wi-vix','wi-fg','wi-tnx','wi-breadth'].forEach(id=>{const el=document.getElementById(id);if(el)document.getElementById(id+'-val').textContent=el.value;});
     const ov={vix:parseFloat(document.getElementById('wi-vix')?.value),fg:parseFloat(document.getElementById('wi-fg')?.value),
         tnx:parseFloat(document.getElementById('wi-tnx')?.value),breadth:parseFloat(document.getElementById('wi-breadth')?.value),
-        oas:(gData.creditSpread?.value||3)*100};
+        oas:(gData?.creditSpread?.value||3)*100};
     const sc=computeScores(ov);if(!sc)return;
     const zone=quadrantZone(sc.trendScore,sc.emotionScore);
     document.getElementById('whatif-result').innerHTML=`<div style="font-weight:700;color:${zone.color}">${zone.name}</div><div>Trend: ${sc.trendScore.toFixed(1)} | Emotion: ${sc.emotionScore} | Stock Target: <b>${sc.stockTarget}%</b></div>`;

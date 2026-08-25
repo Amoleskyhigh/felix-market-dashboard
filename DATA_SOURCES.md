@@ -30,6 +30,13 @@
   - Source: `HG=F` (COMEX Copper futures)
   - Method: 6mo close series + MA3
 
+- SPY / QQQ / SMH / IGV Forward P/E（每日快照）
+  - Holdings source: Alpha Vantage `ETF_PROFILE` （成分股與權重）
+  - Forward P/E source: Yahoo Finance quote endpoint `forwardPE`（cookie/crumb session；個股 analyst consensus），個別缺漏才使用同欄位的 quote page fallback
+  - Method: 僅納入正值 `forwardPE` 的成分股，以持股權重計算調和平均；**不讀取、也不會以 `trailingPE` 替代**。覆蓋率以完整 ETF 已揭露持股權重計算（非僅截取的成分股），並保存 coverage、covered/selected/total holdings、來源、資料日期與擷取時間。
+  - Storage: `forward-pe-history.json` 與 `docs/forward-pe-history.json`
+  - Status rule: coverage >= 80% = `available`；40%~80% = `partial`；<40% = `unavailable`（前端顯示 `N/A`，仍保留來源/日期/錯誤）。免費來源沒有可驗證的歷史序列，從首次每日快照日開始累積，不回填。
+
 ## 一致性規則
 
 1. 日報腳本優先讀取 `felix-market-dashboard/docs/market-data-snapshot.json`。

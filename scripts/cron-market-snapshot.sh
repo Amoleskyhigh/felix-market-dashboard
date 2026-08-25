@@ -4,6 +4,7 @@ cd "$(dirname "$0")/.."
 
 REPO_STATUS="failed"
 DATA_STATUS="Error [unknown]"
+FORWARD_PE_STATUS="not run"
 MISSING_FIELDS="[]"
 SNAPSHOT_FILE="docs/market-data-snapshot.json"
 ROOT_SNAPSHOT_FILE="market-data-snapshot.json"
@@ -80,6 +81,12 @@ if [ -n "$CONFLICT_FILES" ]; then
 fi
 
 if [ "$READY_TO_UPDATE" -eq 1 ]; then
+  if run_cmd "$NODE_BIN" scripts/update-forward-pe-history.js; then
+    FORWARD_PE_STATUS="Success"
+  else
+    FORWARD_PE_STATUS="Error [scripts/update-forward-pe-history.js failed]"
+  fi
+
   if ! run_cmd bash scripts/check-server-safe.sh 8899; then
     if run_cmd nohup "$NODE_BIN" market-server.js >/tmp/market-server.log 2>&1 & then
       STARTED_SERVER=1
@@ -116,8 +123,8 @@ else
   MISSING_FIELDS="$(grep 'MISSING_OR_STALE:' "$TMP_LOG" | tail -n1 | sed 's/^MISSING_OR_STALE:[[:space:]]*/[/' | sed 's/$/]/')"
 fi
 
-if [[ "$DATA_STATUS" == Success* ]] && ! git diff --quiet -- "$SNAPSHOT_FILE" "$ROOT_SNAPSHOT_FILE" 2>/dev/null; then
-  if run_cmd git add "$SNAPSHOT_FILE" "$ROOT_SNAPSHOT_FILE" \
+if [[ "$DATA_STATUS" == Success* ]] && ! git diff --quiet -- "$SNAPSHOT_FILE" "$ROOT_SNAPSHOT_FILE" forward-pe-history.json docs/forward-pe-history.json 2>/dev/null; then
+  if run_cmd git add "$SNAPSHOT_FILE" "$ROOT_SNAPSHOT_FILE" forward-pe-history.json docs/forward-pe-history.json \
     && run_cmd git commit -m "chore: update market snapshot (cron, QA-gated)" \
     && run_cmd git push; then
     REPO_STATUS="updated and pushed"
@@ -142,6 +149,7 @@ fi
 
 echo "Repo Status: $REPO_STATUS"
 echo "Data Status: $DATA_STATUS"
+echo "Forward P/E Status: $FORWARD_PE_STATUS"
 echo "Missing Fields: $MISSING_FIELDS"
 echo "Snapshot File: $SNAPSHOT_FILE"
 echo "Snapshot Timestamp: $SNAPSHOT_TIMESTAMP"

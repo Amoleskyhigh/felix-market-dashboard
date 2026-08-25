@@ -199,6 +199,22 @@ body {
 .chart-container { position: relative; height: 220px; }
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 18px; }
 
+/* ===== ETF FORWARD P/E ===== */
+.forward-pe-status { font-size:12px; color:var(--text-dim); margin:-3px 0 12px; }
+.forward-pe-status.available { color:var(--green); }
+.forward-pe-status.partial { color:var(--yellow); }
+.forward-pe-status.pending { color:var(--text-dim); }
+.forward-pe-latest { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+.forward-pe-metric { background:var(--bg-panel); border:1px solid var(--border); border-radius:8px; padding:9px; min-width:0; display:grid; grid-template-columns:10px 1fr; column-gap:5px; }
+.forward-pe-metric b { font-size:12px; }
+.forward-pe-metric strong { grid-column:1 / -1; font-size:21px; color:#fff; margin-top:4px; }
+.forward-pe-metric small { grid-column:1 / -1; color:var(--text-dim); font-size:10px; margin-top:3px; }
+.forward-pe-dot { width:8px; height:8px; border-radius:50%; align-self:center; }
+.forward-pe-chart { display:block; width:100%; height:auto; min-height:190px; background:rgba(15,22,40,.45); border:1px solid var(--border); border-radius:8px; }
+.forward-pe-meta { color:var(--text-dim); font-size:10px; line-height:1.45; margin-top:9px; overflow-wrap:anywhere; }
+.forward-pe-note { color:var(--text-dim); font-size:11px; line-height:1.5; margin-top:9px; }
+@media (max-width:620px) { .forward-pe-latest { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
 /* ===== TABLES ===== */
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 th { text-align: left; color: var(--accent); padding: 8px; border-bottom: 2px solid var(--border); font-weight: 600; }

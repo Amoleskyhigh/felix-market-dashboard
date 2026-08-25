@@ -5,6 +5,7 @@
   "description": "Local market dashboard + API",
   "main": "market-server.js",
   "scripts": {
-    "start": "node market-server.js"
+    "start": "node market-server.js",
+    "test": "node tests/forward-pe.test.js"
   }
 }

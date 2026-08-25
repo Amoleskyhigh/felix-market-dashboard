@@ -56,6 +56,7 @@ function movingAverage(arr,n){if(!arr?.length)return[];const out=[],win=[];for(l
 // ===== INIT =====
 async function init(){
     const bar=document.getElementById('status-bar');
+    loadForwardPEPanel();
     try{
         let src='live API',res;
         try{res=await fetch('/api/data?t='+Date.now());if(!res.ok)throw 0;const d=await res.json();if(!isValid(d))throw 0;gData=d;}
