@@ -10,7 +10,7 @@
     {
       "date": "2026-08-25",
       "asOf": "2026-08-25",
-      "retrievedAt": "2026-08-25T22:32:14.282Z",
+      "retrievedAt": "2026-08-25T22:40:01.380Z",
       "etfs": {
         "SPY": {
           "value": 18.78,
@@ -45,41 +45,42 @@
           }
         },
         "SMH": {
-          "value": null,
-          "status": "unavailable",
-          "coverage": 0,
-          "totalHoldings": 0,
-          "selectedHoldings": 0,
-          "coveredHoldings": 0,
-          "selectedWeight": 0,
+          "value": 17.27,
+          "status": "partial",
+          "coverage": 0.6208,
+          "totalHoldings": 25,
+          "selectedHoldings": 25,
+          "coveredHoldings": 11,
+          "selectedWeight": 1,
+          "coveredWeight": 0.620835,
           "asOf": "2026-08-25",
-          "retrievedAt": "2026-08-25T22:32:14.282Z",
+          "retrievedAt": "2026-08-25T22:40:01.380Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
-          },
-          "error": "SMH: Alpha Vantage rate limit; N/A recorded."
+          }
         },
         "IGV": {
           "value": null,
           "status": "unavailable",
-          "coverage": 0,
-          "totalHoldings": 0,
-          "selectedHoldings": 0,
-          "coveredHoldings": 0,
-          "selectedWeight": 0,
+          "coverage": 0.0862,
+          "totalHoldings": 105,
+          "selectedHoldings": 105,
+          "coveredHoldings": 9,
+          "selectedWeight": 1,
+          "coveredWeight": 0.08619,
           "asOf": "2026-08-25",
-          "retrievedAt": "2026-08-25T22:32:14.282Z",
+          "retrievedAt": "2026-08-25T22:40:01.380Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
           },
-          "error": "IGV: Alpha Vantage rate limit; N/A recorded."
+          "error": "Forward P/E coverage below 40%; no trailing P/E fallback was used."
         }
       }
     }
   ],
   "startedAt": "2026-08-25",
-  "lastUpdatedAt": "2026-08-25T22:32:14.282Z",
+  "lastUpdatedAt": "2026-08-25T22:40:01.380Z",
   "maxHoldingsPerETF": 200
 }
