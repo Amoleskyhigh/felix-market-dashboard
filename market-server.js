@@ -167,6 +167,20 @@ function loadSnapshotFallback() {
   }
 }
 
+function loadSnapshotCreditSpreadFallback() {
+  const snap = loadSnapshotFallback();
+  if (Number.isFinite(snap?.creditSpread?.value)) {
+    return {
+      value: snap.creditSpread.value,
+      asOf: snap.creditSpread.asOf || null,
+      symbol: snap.creditSpread.symbol || 'BAMLH0A0HYM2',
+      source: snap.creditSpread.source || 'snapshot-fallback',
+      stale: true
+    };
+  }
+  return null;
+}
+
 function getCachedFallback() {
   return lastPayloadCache || loadSnapshotFallback() || { timestamp: Date.now(), stale: true, source: 'empty-fallback' };
 }
@@ -228,13 +242,14 @@ async function getAllData() {
     fetchYahooChart('HG=F'), fetchMarketBreadth()
   ]);
 
-  const payload = { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, usdtwd, twd: usdtwd, dxy, tnx, shiller, fearGreed, creditSpread, copper, breadth, timestamp: Date.now() };
+  const resolvedCreditSpread = creditSpread || lastGoodCreditSpread || loadSnapshotCreditSpreadFallback();
+  const payload = { qqq, smh, boxx, spy, spx, ixic, sox, qld, vix, usdtwd, twd: usdtwd, dxy, tnx, shiller, fearGreed, creditSpread: resolvedCreditSpread, copper, breadth, timestamp: Date.now() };
   if (isHealthyPayload(payload)) lastPayloadCache = payload;
   return payload;
 }
 
 function isHealthyPayload(d) {
-  return !!(d && d.qqq?.currentPrice && d.smh?.currentPrice && d.vix?.currentPrice && d.shiller?.current);
+  return !!(d && d.qqq?.currentPrice && d.smh?.currentPrice && d.vix?.currentPrice && d.shiller?.current && d.creditSpread?.value);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -258,7 +273,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    let filePath = req.url === '/' ? '/market-dashboard.html' : req.url;
+    // Static assets are often fetched with a cache-busting query string.
+    // Use the pathname parsed above so `forward-pe-history.json?t=...` maps
+    // to the real file instead of a literal filename containing `?t=`.
+    let filePath = urlPath === '/' ? '/market-dashboard.html' : urlPath;
     filePath = path.join(__dirname, filePath);
     const ext = path.extname(filePath);
     const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };

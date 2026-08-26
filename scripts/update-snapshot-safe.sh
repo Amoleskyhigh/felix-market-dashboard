@@ -32,6 +32,10 @@ missing=[]
 # allow carrying forward slowly-updated series (credit spread) from previous snapshot
 if not d.get('creditSpread') and prev.get('creditSpread'):
     d['creditSpread'] = prev['creditSpread']
+elif d.get('creditSpread') and prev.get('creditSpread'):
+    for key in ('value', 'asOf', 'symbol', 'source', 'stale'):
+        if d['creditSpread'].get(key) is None and prev['creditSpread'].get(key) is not None:
+            d['creditSpread'][key] = prev['creditSpread'][key]
 
 def req(path):
     cur=d
