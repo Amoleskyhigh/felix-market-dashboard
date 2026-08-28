@@ -224,76 +224,76 @@
     {
       "date": "2026-08-28",
       "asOf": "2026-08-28",
-      "retrievedAt": "2026-08-28T06:15:28.933Z",
+      "retrievedAt": "2026-08-28T22:40:01.082Z",
       "etfs": {
         "SPY": {
-          "value": null,
-          "status": "unavailable",
-          "coverage": 0,
-          "totalHoldings": 0,
-          "selectedHoldings": 0,
-          "coveredHoldings": 0,
-          "selectedWeight": 0,
+          "value": 19.68,
+          "status": "partial",
+          "coverage": 0.7672,
+          "totalHoldings": 502,
+          "selectedHoldings": 200,
+          "coveredHoldings": 141,
+          "selectedWeight": 0.874612,
+          "coveredWeight": 0.767237,
           "asOf": "2026-08-28",
-          "retrievedAt": "2026-08-28T06:15:28.933Z",
+          "retrievedAt": "2026-08-28T22:40:01.082Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
-          },
-          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
+          }
         },
         "QQQ": {
-          "value": null,
-          "status": "unavailable",
-          "coverage": 0,
-          "totalHoldings": 0,
-          "selectedHoldings": 0,
-          "coveredHoldings": 0,
-          "selectedWeight": 0,
+          "value": 18.99,
+          "status": "available",
+          "coverage": 0.8864,
+          "totalHoldings": 101,
+          "selectedHoldings": 101,
+          "coveredHoldings": 65,
+          "selectedWeight": 1,
+          "coveredWeight": 0.886357,
           "asOf": "2026-08-28",
-          "retrievedAt": "2026-08-28T06:15:28.933Z",
+          "retrievedAt": "2026-08-28T22:40:01.082Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
-          },
-          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
+          }
         },
         "SMH": {
-          "value": null,
-          "status": "unavailable",
-          "coverage": 0,
-          "totalHoldings": 0,
-          "selectedHoldings": 0,
-          "coveredHoldings": 0,
-          "selectedWeight": 0,
+          "value": 19.03,
+          "status": "available",
+          "coverage": 0.8781,
+          "totalHoldings": 25,
+          "selectedHoldings": 25,
+          "coveredHoldings": 20,
+          "selectedWeight": 1,
+          "coveredWeight": 0.878115,
           "asOf": "2026-08-28",
-          "retrievedAt": "2026-08-28T06:15:28.933Z",
+          "retrievedAt": "2026-08-28T22:40:01.082Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
-          },
-          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
+          }
         },
         "IGV": {
-          "value": null,
-          "status": "unavailable",
-          "coverage": 0,
-          "totalHoldings": 0,
-          "selectedHoldings": 0,
-          "coveredHoldings": 0,
-          "selectedWeight": 0,
+          "value": 23.96,
+          "status": "partial",
+          "coverage": 0.766,
+          "totalHoldings": 105,
+          "selectedHoldings": 105,
+          "coveredHoldings": 41,
+          "selectedWeight": 1,
+          "coveredWeight": 0.765985,
           "asOf": "2026-08-28",
-          "retrievedAt": "2026-08-28T06:15:28.933Z",
+          "retrievedAt": "2026-08-28T22:40:01.082Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
-          },
-          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
+          }
         }
       }
     }
   ],
   "startedAt": "2026-08-25",
-  "lastUpdatedAt": "2026-08-28T06:15:28.933Z",
+  "lastUpdatedAt": "2026-08-28T22:40:01.082Z",
   "maxHoldingsPerETF": 200
 }
