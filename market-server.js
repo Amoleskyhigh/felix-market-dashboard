@@ -186,25 +186,29 @@ function getCachedFallback() {
 }
 
 async function fetchMarketBreadth() {
+  // Yahoo discontinued $S5TH, which was the previous source. StockCharts
+  // publishes the same S&P 500 >200-day-MA measure under $SPXA200R.
   try {
-    const raw = await fetchURL('https://query1.finance.yahoo.com/v8/finance/chart/$S5TH?range=1mo&interval=1d', 10000);
-    const data = JSON.parse(raw);
-    const result = data?.chart?.result?.[0];
-    const p = result?.meta?.regularMarketPrice;
-    if (Number.isFinite(p) && p >= 0 && p <= 100) return { value: p, source: 'Barchart:$S5TH(yahoo)' };
-    const closes = result?.indicators?.quote?.[0]?.close || [];
-    const last = closes.filter(v => Number.isFinite(v)).slice(-1)[0];
-    if (Number.isFinite(last) && last >= 0 && last <= 100) return { value: last, source: 'Barchart:$S5TH(yahoo)' };
+    const raw = await fetchURL('https://stockcharts.com/quotebrain/quotes?s=%24SPXA200R&f=json', 12000);
+    const quote = JSON.parse(raw)?.[0];
+    const value = quote?.close;
+    if (Number.isFinite(value) && value >= 0 && value <= 100) {
+      return {
+        value,
+        source: 'StockCharts:$SPXA200R',
+        asOf: quote?.time?.time || null
+      };
+    }
   } catch {}
 
-  // Fallback: parse Barchart page
+  // Keep the legacy provider only as a best-effort fallback.
   try {
     const html = await fetchURL('https://www.barchart.com/stocks/quotes/$S5TH', 12000);
     const m = html.match(/"lastPrice"\s*:\s*"?([0-9]+(?:\.[0-9]+)?)"?/i)
       || html.match(/"raw"\s*:\s*([0-9]+(?:\.[0-9]+)?)/i);
     if (m) {
       const v = parseFloat(m[1]);
-      if (Number.isFinite(v) && v >= 0 && v <= 100) return { value: v, source: 'Barchart:$S5TH(page)' };
+      if (Number.isFinite(v) && v >= 0 && v <= 100) return { value: v, source: 'Barchart:$S5TH(page, legacy)' };
     }
   } catch {}
   return null;
