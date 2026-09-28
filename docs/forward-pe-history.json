@@ -1711,9 +1711,80 @@
           }
         }
       }
+    },
+    {
+      "date": "2026-09-28",
+      "asOf": "2026-09-28",
+      "retrievedAt": "2026-09-28T22:40:02.435Z",
+      "etfs": {
+        "SPY": {
+          "value": null,
+          "status": "unavailable",
+          "coverage": 0,
+          "totalHoldings": 0,
+          "selectedHoldings": 0,
+          "coveredHoldings": 0,
+          "selectedWeight": 0,
+          "asOf": "2026-09-28",
+          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          },
+          "error": "SPY: Alpha Vantage rate limit; N/A recorded."
+        },
+        "QQQ": {
+          "value": null,
+          "status": "unavailable",
+          "coverage": 0,
+          "totalHoldings": 0,
+          "selectedHoldings": 0,
+          "coveredHoldings": 0,
+          "selectedWeight": 0,
+          "asOf": "2026-09-28",
+          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          },
+          "error": "QQQ: Alpha Vantage rate limit; N/A recorded."
+        },
+        "SMH": {
+          "value": null,
+          "status": "unavailable",
+          "coverage": 0,
+          "totalHoldings": 0,
+          "selectedHoldings": 0,
+          "coveredHoldings": 0,
+          "selectedWeight": 0,
+          "asOf": "2026-09-28",
+          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          },
+          "error": "SMH: Alpha Vantage rate limit; N/A recorded."
+        },
+        "IGV": {
+          "value": null,
+          "status": "unavailable",
+          "coverage": 0,
+          "totalHoldings": 0,
+          "selectedHoldings": 0,
+          "coveredHoldings": 0,
+          "selectedWeight": 0,
+          "asOf": "2026-09-28",
+          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          },
+          "error": "IGV: Alpha Vantage rate limit; N/A recorded."
+        }
+      }
     }
   ],
   "startedAt": "2026-08-25",
-  "lastUpdatedAt": "2026-09-26T00:48:41.902Z",
+  "lastUpdatedAt": "2026-09-28T22:40:02.435Z",
   "maxHoldingsPerETF": 200
 }
