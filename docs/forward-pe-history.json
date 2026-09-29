@@ -1715,7 +1715,7 @@
     {
       "date": "2026-09-28",
       "asOf": "2026-09-28",
-      "retrievedAt": "2026-09-28T22:40:02.435Z",
+      "retrievedAt": "2026-09-29T02:13:58.916Z",
       "etfs": {
         "SPY": {
           "value": null,
@@ -1726,12 +1726,12 @@
           "coveredHoldings": 0,
           "selectedWeight": 0,
           "asOf": "2026-09-28",
-          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "retrievedAt": "2026-09-29T02:13:58.916Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
           },
-          "error": "SPY: Alpha Vantage rate limit; N/A recorded."
+          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
         },
         "QQQ": {
           "value": null,
@@ -1742,12 +1742,12 @@
           "coveredHoldings": 0,
           "selectedWeight": 0,
           "asOf": "2026-09-28",
-          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "retrievedAt": "2026-09-29T02:13:58.916Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
           },
-          "error": "QQQ: Alpha Vantage rate limit; N/A recorded."
+          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
         },
         "SMH": {
           "value": null,
@@ -1758,12 +1758,12 @@
           "coveredHoldings": 0,
           "selectedWeight": 0,
           "asOf": "2026-09-28",
-          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "retrievedAt": "2026-09-29T02:13:58.916Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
           },
-          "error": "SMH: Alpha Vantage rate limit; N/A recorded."
+          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
         },
         "IGV": {
           "value": null,
@@ -1774,17 +1774,17 @@
           "coveredHoldings": 0,
           "selectedWeight": 0,
           "asOf": "2026-09-28",
-          "retrievedAt": "2026-09-28T22:40:02.435Z",
+          "retrievedAt": "2026-09-29T02:13:58.916Z",
           "sources": {
             "holdings": "Alpha Vantage ETF_PROFILE",
             "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
           },
-          "error": "IGV: Alpha Vantage rate limit; N/A recorded."
+          "error": "ALPHA_VANTAGE_API_KEY is not configured; N/A recorded."
         }
       }
     }
   ],
   "startedAt": "2026-08-25",
-  "lastUpdatedAt": "2026-09-28T22:40:02.435Z",
+  "lastUpdatedAt": "2026-09-29T02:13:58.916Z",
   "maxHoldingsPerETF": 200
 }
