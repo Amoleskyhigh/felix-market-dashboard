@@ -1853,9 +1853,80 @@
           }
         }
       }
+    },
+    {
+      "date": "2026-09-30",
+      "asOf": "2026-09-30",
+      "retrievedAt": "2026-09-30T22:40:01.141Z",
+      "etfs": {
+        "SPY": {
+          "value": 18.77,
+          "status": "available",
+          "coverage": 0.8408,
+          "totalHoldings": 494,
+          "selectedHoldings": 200,
+          "coveredHoldings": 175,
+          "selectedWeight": 0.883237,
+          "coveredWeight": 0.840777,
+          "asOf": "2026-09-30",
+          "retrievedAt": "2026-09-30T22:40:01.141Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          }
+        },
+        "QQQ": {
+          "value": 19.12,
+          "status": "available",
+          "coverage": 0.9751,
+          "totalHoldings": 100,
+          "selectedHoldings": 100,
+          "coveredHoldings": 90,
+          "selectedWeight": 1,
+          "coveredWeight": 0.975075,
+          "asOf": "2026-09-30",
+          "retrievedAt": "2026-09-30T22:40:01.141Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          }
+        },
+        "SMH": {
+          "value": 17.58,
+          "status": "available",
+          "coverage": 1,
+          "totalHoldings": 25,
+          "selectedHoldings": 25,
+          "coveredHoldings": 25,
+          "selectedWeight": 1,
+          "coveredWeight": 1,
+          "asOf": "2026-09-30",
+          "retrievedAt": "2026-09-30T22:40:01.141Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          }
+        },
+        "IGV": {
+          "value": 20.33,
+          "status": "available",
+          "coverage": 0.9358,
+          "totalHoldings": 105,
+          "selectedHoldings": 105,
+          "coveredHoldings": 67,
+          "selectedWeight": 1,
+          "coveredWeight": 0.935827,
+          "asOf": "2026-09-30",
+          "retrievedAt": "2026-09-30T22:40:01.141Z",
+          "sources": {
+            "holdings": "Alpha Vantage ETF_PROFILE",
+            "constituentForwardPE": "Yahoo Finance quote endpoint forwardPE via cookie/crumb (analyst consensus; quote-page fallback; trailingPE excluded)"
+          }
+        }
+      }
     }
   ],
   "startedAt": "2026-08-25",
-  "lastUpdatedAt": "2026-09-30T01:28:15.986Z",
+  "lastUpdatedAt": "2026-09-30T22:40:01.141Z",
   "maxHoldingsPerETF": 200
 }
