@@ -4,12 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const PORT = 8899;
+const PORT = Number(process.env.PORT || 8899);
 const SNAPSHOT_PATH = path.join(__dirname, 'docs', 'market-data-snapshot.json');
 let lastGoodCreditSpread = null;
 let lastPayloadCache = null;
 
-const API_BUDGET_MS = 9000;
+// The breadth pages can be slow while the other market sources are fetched in
+// parallel.  Give the scheduled snapshot job enough time to obtain a fresh
+// source before falling back to the previous snapshot.
+const API_BUDGET_MS = 20000;
 
 try {
   if (fs.existsSync(SNAPSHOT_PATH)) {
@@ -186,30 +189,42 @@ function getCachedFallback() {
 }
 
 async function fetchMarketBreadth() {
-  // Yahoo discontinued $S5TH, which was the previous source. StockCharts
-  // publishes the same S&P 500 >200-day-MA measure under $SPXA200R.
+  const todayNY = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  const valid = (value, asOf) => {
+    if (!Number.isFinite(value) || value < 0 || value > 100 || !/^\d{4}-\d{2}-\d{2}$/.test(asOf || '')) return false;
+    const age = (Date.parse(`${todayNY}T00:00:00Z`) - Date.parse(`${asOf}T00:00:00Z`)) / 86400000;
+    return Number.isFinite(age) && age >= 0 && age <= 3;
+  };
+  const pageDate = (raw) => {
+    const text = raw.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&');
+    const m = text.match(/(?:as of market close|Last updated:|on)\s*,?\s*([A-Z][a-z]+ \d{1,2}, \d{4})/i)
+      || text.match(/(\d{4}-\d{2}-\d{2})/);
+    if (!m) return null;
+    const d = /^\d{4}-/.test(m[1]) ? new Date(`${m[1]}T00:00:00Z`) : new Date(m[1]);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  };
+  const pages = [
+    ['https://chartrow.com/sp500/market-breadth', /(\d+(?:\.\d+)?)%\s*of\s*eligible\s*members/i, 'ChartRow:S&P500 market breadth'],
+    ['https://tradingtwohundred.com/', /(\d+(?:\.\d+)?)%\s+of\s+the\s+S&P\s*500\s+is\s+above\s+its\s+200-day\s+average/i, 'TradingTwoHundred:S&P500 breadth']
+  ];
+  for (const [url, pattern, source] of pages) {
+    try {
+      const raw = await fetchURL(url, 12000);
+      const text = raw.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&');
+      const m = text.match(pattern);
+      const value = m ? Number(m[1]) : NaN;
+      const asOf = pageDate(raw);
+      if (valid(value, asOf)) return { value, source, asOf };
+    } catch {}
+  }
   try {
     const raw = await fetchURL('https://stockcharts.com/quotebrain/quotes?s=%24SPXA200R&f=json', 12000);
     const quote = JSON.parse(raw)?.[0];
-    const value = quote?.close;
-    if (Number.isFinite(value) && value >= 0 && value <= 100) {
-      return {
-        value,
-        source: 'StockCharts:$SPXA200R',
-        asOf: quote?.time?.time || null
-      };
-    }
-  } catch {}
-
-  // Keep the legacy provider only as a best-effort fallback.
-  try {
-    const html = await fetchURL('https://www.barchart.com/stocks/quotes/$S5TH', 12000);
-    const m = html.match(/"lastPrice"\s*:\s*"?([0-9]+(?:\.[0-9]+)?)"?/i)
-      || html.match(/"raw"\s*:\s*([0-9]+(?:\.[0-9]+)?)/i);
-    if (m) {
-      const v = parseFloat(m[1]);
-      if (Number.isFinite(v) && v >= 0 && v <= 100) return { value: v, source: 'Barchart:$S5TH(page, legacy)' };
-    }
+    const value = Number(quote?.close);
+    const asOf = String(quote?.time?.time || '').slice(0, 10);
+    if (valid(value, asOf)) return { value, source: 'StockCharts:$SPXA200R', asOf };
   } catch {}
   return null;
 }
