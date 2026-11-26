@@ -68,17 +68,28 @@ async function fetchYahooChart(symbol, range = '1y', interval = '1d') {
 }
 
 async function fetchShillerPE() {
-  try {
-    const html = await fetchURL('https://www.multpl.com/shiller-pe/table/by-month');
-    const rows = [];
-    const regex = /<td>([A-Z][a-z]+\s+\d{1,2},\s+\d{4})<\/td>\s*<td>\s*[\s\S]*?([\d]+\.[\d]+)\s*<\/td>/g;
-    let m;
-    while ((m = regex.exec(html)) !== null) rows.push({ date: m[1], value: parseFloat(m[2]) });
-    if (!rows.length) return { current: null, history: [] };
-    return { current: rows[0].value, history: rows.slice(0, 120).reverse() };
-  } catch {
-    return { current: null, history: [] };
+  const urls = [
+    'https://www.multpl.com/shiller-pe/table/by-month',
+    'https://r.jina.ai/http://www.multpl.com/shiller-pe/table/by-month'
+  ];
+  for (const url of urls) {
+    try {
+      const body = await fetchURL(url, 20000);
+      const rows = [];
+      // Multpl's direct HTML uses <td>; Jina's stable fallback exposes the
+      // same table as Markdown.  Accept both while requiring a real date.
+      const regex = url.startsWith('https://r.jina.ai/')
+        ? /\|\s*([A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})\s*\|\s*([\d]+(?:\.[\d]+)?)\s*\|/g
+        : /<td>([A-Z][a-z]+\s+\d{1,2},\s+\d{4})<\/td>\s*<td>\s*[\s\S]*?([\d]+(?:\.[\d]+)?)\s*<\/td>/g;
+      let m;
+      while ((m = regex.exec(body)) !== null) {
+        const value = Number.parseFloat(m[2]);
+        if (Number.isFinite(value)) rows.push({ date: m[1], value });
+      }
+      if (rows.length) return { current: rows[0].value, history: rows.slice(0, 120).reverse() };
+    } catch {}
   }
+  return { current: null, history: [] };
 }
 
 async function fetchFearGreed() {
