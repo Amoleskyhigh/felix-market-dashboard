@@ -4697,7 +4697,7 @@
     {
       "date": "2026-11-25",
       "asOf": "2026-11-25",
-      "retrievedAt": "2026-11-26T01:29:17.772Z",
+      "retrievedAt": "2026-11-26T04:18:33.933Z",
       "etfs": {
         "SPY": {
           "value": 16.29,
@@ -4767,6 +4767,6 @@
     }
   ],
   "startedAt": "2026-08-25",
-  "lastUpdatedAt": "2026-11-26T01:29:17.772Z",
+  "lastUpdatedAt": "2026-11-26T04:18:33.933Z",
   "maxHoldingsPerETF": 200
 }
